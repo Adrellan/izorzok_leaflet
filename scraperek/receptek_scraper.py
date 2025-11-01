@@ -1,6 +1,7 @@
 import argparse
 import csv
 import json
+from urllib.parse import urlsplit
 import os
 import re
 import sys
@@ -145,45 +146,107 @@ def find_max_page(soup: BeautifulSoup) -> int:
 
 
 def parse_listing_links(html: str) -> List[str]:
+    """Extract only recipe permalinks from the main listing content area.
+
+    Avoids sidebars/related posts by limiting to `article` entries and
+    `entry-title` links in the main content container.
+    """
     soup = BeautifulSoup(html, "html.parser")
     links: List[str] = []
 
-    # Typical WP theme: h2.entry-title a
-    for a in soup.select("h2.entry-title a[href]"):
-        links.append(a["href"]) 
+    container = soup.select_one("main, .site-main, #main, .content-area, .primary, #content, .archive") or soup
 
-    # Additional fallbacks: article entries
-    for a in soup.select("article a[href]"):
-        href = a["href"]
-        if not href:
+    def to_absolute(href: str) -> Optional[str]:
+        if not href or href.startswith("#"):
+            return None
+        if href.startswith("/"):
+            return BASE_URL + href
+        if href.startswith(BASE_URL):
+            return href
+        return None
+
+    def looks_like_post(href: str) -> bool:
+        if any(seg in href for seg in ["/kategoria/", "/cimke/", "/tag/", "/kategoriak/"]):
+            return False
+        parts = urlsplit(href)
+        # Accept simple `/{slug}/` pattern (1 non-empty segment)
+        segs = [s for s in parts.path.split("/") if s]
+        return len(segs) == 1
+
+    # Primary: h2.entry-title a within article in container
+    for article in container.select("article"):
+        a = article.select_one("h2.entry-title a[href], .entry-title a[href], a[rel='bookmark']")
+        if not a:
             continue
-        # Skip navigational anchors
-        if href.startswith("#"):
+        href_abs = to_absolute(a.get("href"))
+        if not href_abs:
             continue
-        if BASE_URL not in href:
-            # Convert relative to absolute if needed
-            if href.startswith("/"):
-                href = BASE_URL + href
-            else:
-                continue
-        # Heuristic: avoid category/tag links in listing
-        if "/kategoria/" in href or "/cimke/" in href:
-            continue
-        links.append(href)
+        if looks_like_post(href_abs):
+            links.append(href_abs)
+
+    # Fallback: global titles if nothing found
+    if not links:
+        for a in soup.select("h2.entry-title a[href]"):
+            href_abs = to_absolute(a.get("href"))
+            if href_abs and looks_like_post(href_abs):
+                links.append(href_abs)
 
     return unique(links)
 
 
+def _parse_ingredients_from_text(text: str) -> List[str]:
+    """Extract ingredients from a single paragraph that contains a label like 'Hozzávalók:'.
+
+    Strategy:
+    - Find the label (accent tolerant) and take the substring after it.
+    - Prefer splitting by list-like separators; otherwise split by periods into groups.
+    """
+    if not text:
+        return []
+    # Match 'Hozzávalók' with accent tolerance
+    m = re.search(r"(?i)Hozz[aá]val[oó]k\s*[:：]?", text)
+    if not m:
+        return []
+    tail = text[m.end():].strip()
+    if not tail:
+        return []
+    # Prefer to keep the entire tail as a single item unless clear separators exist.
+    if "\n" in tail or "•" in tail or ";" in tail:
+        parts = re.split(r"\n+|•|;", tail)
+    else:
+        parts = [tail]
+    items: List[str] = []
+    for part in parts:
+        p = clean_text(part)
+        if not p:
+            continue
+        # Avoid capturing typical instruction openers if they slip in
+        if re.match(r"(?i)A\s+s[uü]t[eé]s|Elk[eé]sz[ií]t", p):
+            continue
+        items.append(p)
+    return items
+
+
 def find_text_block_after_heading(content_root: Tag, heading_keywords: List[str]) -> List[str]:
-    """Find list items or paragraphs after a heading that matches one of the keywords."""
+    """Find ingredients near a heading/label matching keywords, including the same paragraph.
+
+    - If the matched element itself contains 'Hozzávalók', extract from it.
+    - Else, collect list items or paragraphs from following siblings until next heading.
+    """
     norm_keys = [normalize_text(k) for k in heading_keywords]
     # Look for headings h1-h6 and strong labels
     candidates = content_root.select("h1, h2, h3, h4, h5, h6, strong, b, p")
     for el in candidates:
         text = normalize_text(el.get_text(" ", strip=True))
         if any(k in text for k in norm_keys):
-            # Gather subsequent sibling content until next heading
-            items: List[str] = []
+            # First, try to parse ingredients from the same element (paragraph label case)
+            same_text = el.get_text(" ", strip=True)
+            items = _parse_ingredients_from_text(same_text)
+            if items:
+                return [i for i in (t.strip("-• ") for t in items) if i]
+
+            # Otherwise, gather subsequent sibling content until next heading
+            items = []
             cursor: Optional[Tag] = el
             while cursor is not None:
                 cursor = cursor.find_next_sibling()
@@ -199,6 +262,10 @@ def find_text_block_after_heading(content_root: Tag, heading_keywords: List[str]
                 # Fallback: split paragraphs by newlines, semicolons, commas
                 if cursor.name in {"p", "div"} and not items:
                     raw = cursor.get_text("\n", strip=True)
+                    # If the following paragraph itself contains the label, use that paragraph only
+                    parsed_here = _parse_ingredients_from_text(raw)
+                    if parsed_here:
+                        return [i for i in parsed_here if i]
                     # Heuristic split
                     parts = re.split(r"\n+|;|,", raw)
                     for part in parts:
@@ -209,6 +276,47 @@ def find_text_block_after_heading(content_root: Tag, heading_keywords: List[str]
                 if items:
                     # Stop once we collected some items from the immediate block
                     break
+            return [i for i in (t.strip("-• ") for t in items) if i]
+    return []
+
+
+def _is_italic(el: Tag) -> bool:
+    if el.name in {"em", "i"}:
+        return True
+    cls = " ".join(el.get("class", [])).lower()
+    if "italic" in cls or "emphasis" in cls:
+        return True
+    style = (el.get("style") or "").lower()
+    if "font-style: italic" in style:
+        return True
+    return False
+
+
+def find_ingredients_by_italics(content_root: Tag) -> List[str]:
+    """Prefer ingredients contained in an italic paragraph or inline block.
+
+    The site often formats the whole 'Hozzávalók: …' as italics. We
+    look for italic elements containing the label and parse from there.
+    """
+    # 1) Direct italic elements
+    for el in content_root.select("em, i, span, p"):
+        try:
+            if not _is_italic(el):
+                continue
+        except Exception:
+            continue
+        text = clean_text(el.get_text(" ", strip=True))
+        if not text:
+            continue
+        items = _parse_ingredients_from_text(text)
+        if items:
+            return [i for i in (t.strip("-• ") for t in items) if i]
+    # 2) Paragraphs that contain an italic child with the label
+    for p in content_root.select("p"):
+        it = p.find(["em", "i"]) or p
+        text = clean_text(p.get_text(" ", strip=True))
+        items = _parse_ingredients_from_text(text)
+        if items:
             return [i for i in (t.strip("-• ") for t in items) if i]
     return []
 
@@ -284,10 +392,12 @@ def parse_recipe(session: requests.Session, url: str, settlements: List[str], de
     # Content root
     content_root = soup.select_one(".entry-content, .post-content, article")
 
-    # Ingredients
-    ingredients = find_text_block_after_heading(
-        content_root or soup, ["Hozzávalók", "Hozzavalok", "Hozzávaló"]
-    )
+    # Ingredients: prefer italic paragraph with 'Hozzávalók', then fallback to heading-based
+    ingredients = find_ingredients_by_italics(content_root or soup)
+    if not ingredients:
+        ingredients = find_text_block_after_heading(
+            content_root or soup, ["Hozzávalók", "Hozzavalok", "Hozzávaló"]
+        )
 
     # Year
     year = extract_year(soup, content_root)
@@ -352,6 +462,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--retries", type=int, default=3, help="Újrapróbálkozások száma")
     parser.add_argument("--out-json", type=str, default="receptek.jsonl", help="JSONL kimeneti fájl")
     parser.add_argument("--out-csv", type=str, default="receptek.csv", help="CSV kimeneti fájl")
+    parser.add_argument("--single-url", type=str, default=None, help="Csak egy megadott recept URL feldolgozása")
     parser.add_argument(
         "--settlement-list",
         type=str,
@@ -364,17 +475,22 @@ def main(argv: Optional[List[str]] = None) -> int:
     session = make_session()
 
     all_links: List[str] = []
-    print(f"Listing beolvasása: {LISTING_URL}")
-    for page_num, html in iter_listing_pages(session, args.start_page, args.end_page):
-        print(f"- Oldal #{page_num} feldolgozása…")
-        links = parse_listing_links(html)
-        print(f"  Talált linkek: {len(links)}")
-        all_links.extend(links)
-        time.sleep(args.delay)
+    if args.single_url:
+        all_links = [args.single_url]
+        print(f"Egyetlen recept feldolgozása: {args.single_url}")
+    else:
+        print(f"Listing beolvasása: {LISTING_URL}")
+        # fasz
+        for page_num, html in iter_listing_pages(session, args.start_page, 1):
+            print(f"- Oldal #{page_num} feldolgozása…")
+            links = parse_listing_links(html)
+            print(f"  Talált linkek: {len(links)}")
+            all_links.extend(links)
+            time.sleep(args.delay)
 
-    # Deduplicate while preserving order
-    all_links = unique(all_links)
-    print(f"Összes egyedi recept link: {len(all_links)}")
+        # Deduplicate while preserving order
+        all_links = unique(all_links)
+        print(f"Összes egyedi recept link: {len(all_links)}")
 
     recipes: List[Recipe] = []
     for i, url in enumerate(all_links, 1):
@@ -401,4 +517,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Megszakítva.")
         raise
-
