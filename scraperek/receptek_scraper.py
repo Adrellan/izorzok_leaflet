@@ -39,6 +39,11 @@ def clean_text(s: str) -> str:
     return re.sub(r"\s+", " ", (s or "").strip())
 
 
+def normalize_spaces(s: str) -> str:
+    """Collapse all whitespace to single spaces and trim."""
+    return re.sub(r"\s+", " ", (s or "").strip())
+
+
 def read_settlements(file_path: str) -> List[str]:
     settlements: List[str] = []
     try:
@@ -215,16 +220,46 @@ def _parse_ingredients_from_text(text: str) -> List[str]:
         parts = re.split(r"\n+|•|;", tail)
     else:
         parts = [tail]
+    def _clean_labels(s: str) -> str:
+        # Remove label segments ending with ':'; cut from previous '.' or ',' (if any) to ':'
+        t = s
+        while True:
+            idx = t.find(":")
+            if idx == -1:
+                break
+            # closest preceding '.' or ',' before ':'
+            dot = t.rfind(".", 0, idx)
+            comma = t.rfind(",", 0, idx)
+            cut_from = max(dot, comma)
+            if cut_from == -1:
+                # remove from start to colon
+                t = t[idx + 1 :]
+            else:
+                t = t[: cut_from + 1] + t[idx + 1 :]
+        # Remove any parenthetical remarks like (1 nagyobb tepsihez)
+        # Repeat to handle multiple occurrences
+        prev = None
+        while prev != t:
+            prev = t
+            t = re.sub(r"\([^()]*\)", "", t)
+        # collapse spaces and trim leftover separators
+        t = re.sub(r"\s+", " ", t).strip()
+        t = t.strip(" ;|·•")
+        return t
+
     items: List[str] = []
     for part in parts:
         p = clean_text(part)
+        p = _clean_labels(p)
+        p = normalize_spaces(p)
         if not p:
             continue
         # Avoid capturing typical instruction openers if they slip in
         if re.match(r"(?i)A\s+s[uü]t[eé]s|Elk[eé]sz[ií]t", p):
             continue
         items.append(p)
-    return items
+    # Ensure stable single-spacing of every item
+    return [normalize_spaces(x) for x in items]
 
 
 def find_text_block_after_heading(content_root: Tag, heading_keywords: List[str]) -> List[str]:
@@ -445,12 +480,13 @@ def save_csv(path: str, rows: Iterable[Recipe]) -> None:
         w = csv.writer(f)
         w.writerow(["url", "title", "year", "settlement", "ingredients"])
         for r in rows:
+            ingredients_str = normalize_spaces(" | ".join((r.ingredients or [])))
             w.writerow([
-                r.url,
-                r.title,
+                normalize_spaces(r.url),
+                normalize_spaces(r.title),
                 r.year if r.year is not None else "",
-                r.settlement or "",
-                " | ".join(r.ingredients or []),
+                normalize_spaces(r.settlement or ""),
+                ingredients_str,
             ])
 
 
@@ -481,7 +517,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     else:
         print(f"Listing beolvasása: {LISTING_URL}")
         # fasz
-        for page_num, html in iter_listing_pages(session, args.start_page, 1):
+        for page_num, html in iter_listing_pages(session, args.start_page, args.end_page):
             print(f"- Oldal #{page_num} feldolgozása…")
             links = parse_listing_links(html)
             print(f"  Talált linkek: {len(links)}")
