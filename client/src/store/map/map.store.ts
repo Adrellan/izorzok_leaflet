@@ -14,6 +14,8 @@ interface MapState {
 		lng: number,
 	},
 	zoom: number,
+	selectedRegionIds?: number[],
+	selectedSettlementIds?: number[],
 }
 
 
@@ -23,6 +25,8 @@ const initialState: MapState = getLocalStorageData() || {
 		lng: 19.5033, // Magyarország középpontja
 	},
 	zoom: 8,
+	selectedRegionIds: [],
+	selectedSettlementIds: [],
 };
 
 export const mapSlice = createSlice({
@@ -34,9 +38,15 @@ export const mapSlice = createSlice({
 		},
 		setZoom(state, { payload }: PayloadAction<number>) {
 			state.zoom = payload;
-		}
+		},
+		setSelectedRegionIds(state, { payload }: PayloadAction<number[]>) {
+			state.selectedRegionIds = payload;
+		},
+		setSelectedSettlementIds(state, { payload }: PayloadAction<number[]>) {
+			state.selectedSettlementIds = payload;
+		},
 	},
 })
 
-export const { setCoordinates, setZoom } = mapSlice.actions
+export const { setCoordinates, setZoom, setSelectedRegionIds, setSelectedSettlementIds } = mapSlice.actions
 export const mapReducer = mapSlice.reducer;

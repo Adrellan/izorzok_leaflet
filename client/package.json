@@ -12,6 +12,7 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.9.2",
     "@tailwindcss/vite": "^4.1.16",
+    "axios": "^1.13.1",
     "leaflet": "^1.9.4",
     "primeflex": "^4.0.0",
     "primeicons": "^7.0.0",

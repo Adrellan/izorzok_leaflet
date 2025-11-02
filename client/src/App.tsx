@@ -6,15 +6,16 @@ import { store } from "./store/store";
 import "primereact/resources/themes/lara-light-green/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
-import MapViewer from "./pages/MapViewer";
+import "primeflex/primeflex.css";
+import Home from "./pages/Home";
 function App() {
   return (
     <Provider store={store}>
         <Router>
           <Suspense fallback={<div>Loading...</div>}>
             <Routes>
-                <Route path="/" element={<MapViewer />} /> {/* Ez lesz a dashboardpage */}
-                <Route path="*" element={<MapViewer />} />
+                <Route path="/" element={<Home />} />
+                <Route path="*" element={<Home />} />
             </Routes>
           </Suspense>
         </Router>

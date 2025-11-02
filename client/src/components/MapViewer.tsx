@@ -1,5 +1,5 @@
-import React, { use } from 'react';
-import { MapContainer, TileLayer } from 'react-leaflet';
+import React, { useMemo } from 'react';
+import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'primereact/resources/themes/lara-light-blue/theme.css';
@@ -7,7 +7,7 @@ import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import 'primeflex/primeflex.css';
 import { useMapviewer } from '../hooks/useMapViewer';
-import { MapZoomHandler } from '../components/MapZoomHandler';
+import { MapZoomHandler } from './MapZoomHandler';
 import { useMapStatePersist } from '../hooks/useMapStatePersist';
 
 // Fix Leaflet default marker icon issue
@@ -20,10 +20,29 @@ L.Icon.Default.mergeOptions({
 const MapViewer: React.FC = () => {
   useMapStatePersist();
   
-  const { coordinates, zoom }  = useMapviewer();
+  const { coordinates, zoom, regions }  = useMapviewer();
+
+  const featureCollection = useMemo(() => {
+    const features = (regions ?? [])
+      .filter(r => r.geom)
+      .map((r) => ({
+        type: 'Feature',
+        geometry: r.geom as any,
+        properties: { id: r.id, name: r.name ?? '' },
+      }));
+
+    return {
+      type: 'FeatureCollection',
+      features,
+    } as any;
+  }, [regions]);
+
+  const geoJsonKey = useMemo(() => {
+    return (regions ?? []).map(r => r.id).join(',') || 'empty';
+  }, [regions]);
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100%' }}>
+    <div style={{ display: 'flex', height: '100%', width: '100%' }}>
       <div style={{ flex: 1, position: 'relative' }}>
         <MapContainer
           center={[coordinates.lat, coordinates.lng]}
@@ -35,6 +54,24 @@ const MapViewer: React.FC = () => {
             attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+
+          {featureCollection.features?.length ? (
+            <GeoJSON
+              key={geoJsonKey}
+              data={featureCollection as any}
+              style={() => ({
+                color: '#000000ff',
+                weight: 2,
+                fill: false,
+              })}
+              // onEachFeature={(feature, layer) => {
+              //   const name = (feature?.properties as any)?.name ?? '';
+              //   if (name) {
+              //     layer.bindTooltip(name);
+              //   }
+              // }}
+            />
+          ) : null}
 
           <MapZoomHandler />
         </MapContainer>
