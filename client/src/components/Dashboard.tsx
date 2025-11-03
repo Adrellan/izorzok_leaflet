@@ -1,8 +1,13 @@
+import { useState } from 'react';
 import { MultiSelect } from 'primereact/multiselect';
+import { Button } from 'primereact/button';
 import './Dashboard.css';
 import { useDashboard } from '../hooks/useDashboard';
+import StatsDialog from './StatsDialog';
 
 export default function Dashboard() {
+  const [statsOpen, setStatsOpen] = useState(false);
+
   const asideStyle: React.CSSProperties = {
     position: 'sticky',
     top: 0,
@@ -20,13 +25,6 @@ export default function Dashboard() {
     padding: '16px 20px 5px 20px',
     fontWeight: 600,
     fontSize: 18,
-  };
-
-  const subtitleStyle: React.CSSProperties = {
-    padding: '8px 32px',
-    fontSize: 14,
-    fontStyle: 'italic',
-    color: '#94a3b8',
     borderBottom: '1px solid #1f2937',
   };
 
@@ -46,7 +44,6 @@ export default function Dashboard() {
   return (
     <aside style={asideStyle}>
       <div style={brandStyle}>Ízőrzők</div>
-      <div style={subtitleStyle}></div>
       <div style={selectWrapStyle}>
         <div style={{ padding: '6px 12px', color: '#94a3b8', fontSize: 12 }}>Régiók</div>
         <div style={{ padding: '0 8px 12px 8px' }}>
@@ -59,7 +56,8 @@ export default function Dashboard() {
             display="chip"
             placeholder="Válassz régiókat..."
             filter
-            className="w-full"
+            panelClassName="route-ms-panel"
+            className="route-ms w-full"
           />
         </div>
 
@@ -74,10 +72,27 @@ export default function Dashboard() {
             display="chip"
             placeholder="Válassz településeket..."
             filter
-            className="w-full"
+            panelClassName="route-ms-panel"
+            className="route-ms w-full"
+          />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20, padding: '0 8px' }}>
+          <Button
+            type="button"
+            label="Vármegyei statisztikák"
+            className="w-full custom-sidebar-button"
+            onClick={() => setStatsOpen(true)}
+          />
+          <Button
+            type="button"
+            label="Receptek"
+            className="w-full custom-sidebar-button"
           />
         </div>
       </div>
+
+      <StatsDialog visible={statsOpen} onHide={() => setStatsOpen(false)} />
     </aside>
   );
 }

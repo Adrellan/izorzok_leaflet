@@ -206,10 +206,12 @@ export const MapsApiAxiosParamCreator = function (configuration?: Configuration)
         /**
          * Visszaadja az összes települést név szerinti rendezéssel. A `geom` mező GeoJSON Geometry objektum.
          * @summary Települések listázása (GeoJSON geometriával)
+         * @param {Array<number>} [regionId] Opcionális szűrés. Több regionId megadható (?regionId&#x3D;1&amp;regionId&#x3D;2) vagy vesszővel elválasztva (?regionId&#x3D;1,2).
+         * @param {number} [settlementid] Opcionális szűrés. Egy konkrét település ID-ja (egyező s.id).
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiMapsSettlementsGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiMapsSettlementsGet: async (regionId?: Array<number>, settlementid?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/maps/settlements`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -221,6 +223,14 @@ export const MapsApiAxiosParamCreator = function (configuration?: Configuration)
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            if (regionId) {
+                localVarQueryParameter['regionId'] = regionId;
+            }
+
+            if (settlementid !== undefined) {
+                localVarQueryParameter['settlementid'] = settlementid;
+            }
 
 
     
@@ -259,11 +269,13 @@ export const MapsApiFp = function(configuration?: Configuration) {
         /**
          * Visszaadja az összes települést név szerinti rendezéssel. A `geom` mező GeoJSON Geometry objektum.
          * @summary Települések listázása (GeoJSON geometriával)
+         * @param {Array<number>} [regionId] Opcionális szűrés. Több regionId megadható (?regionId&#x3D;1&amp;regionId&#x3D;2) vagy vesszővel elválasztva (?regionId&#x3D;1,2).
+         * @param {number} [settlementid] Opcionális szűrés. Egy konkrét település ID-ja (egyező s.id).
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiMapsSettlementsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<SettlementWithGeom>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiMapsSettlementsGet(options);
+        async apiMapsSettlementsGet(regionId?: Array<number>, settlementid?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<SettlementWithGeom>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiMapsSettlementsGet(regionId, settlementid, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['MapsApi.apiMapsSettlementsGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -291,11 +303,13 @@ export const MapsApiFactory = function (configuration?: Configuration, basePath?
         /**
          * Visszaadja az összes települést név szerinti rendezéssel. A `geom` mező GeoJSON Geometry objektum.
          * @summary Települések listázása (GeoJSON geometriával)
+         * @param {Array<number>} [regionId] Opcionális szűrés. Több regionId megadható (?regionId&#x3D;1&amp;regionId&#x3D;2) vagy vesszővel elválasztva (?regionId&#x3D;1,2).
+         * @param {number} [settlementid] Opcionális szűrés. Egy konkrét település ID-ja (egyező s.id).
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiMapsSettlementsGet(options?: RawAxiosRequestConfig): AxiosPromise<Array<SettlementWithGeom>> {
-            return localVarFp.apiMapsSettlementsGet(options).then((request) => request(axios, basePath));
+        apiMapsSettlementsGet(regionId?: Array<number>, settlementid?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<SettlementWithGeom>> {
+            return localVarFp.apiMapsSettlementsGet(regionId, settlementid, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -322,12 +336,14 @@ export class MapsApi extends BaseAPI {
     /**
      * Visszaadja az összes települést név szerinti rendezéssel. A `geom` mező GeoJSON Geometry objektum.
      * @summary Települések listázása (GeoJSON geometriával)
+     * @param {Array<number>} [regionId] Opcionális szűrés. Több regionId megadható (?regionId&#x3D;1&amp;regionId&#x3D;2) vagy vesszővel elválasztva (?regionId&#x3D;1,2).
+     * @param {number} [settlementid] Opcionális szűrés. Egy konkrét település ID-ja (egyező s.id).
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MapsApi
      */
-    public apiMapsSettlementsGet(options?: RawAxiosRequestConfig) {
-        return MapsApiFp(this.configuration).apiMapsSettlementsGet(options).then((request) => request(this.axios, this.basePath));
+    public apiMapsSettlementsGet(regionId?: Array<number>, settlementid?: number, options?: RawAxiosRequestConfig) {
+        return MapsApiFp(this.configuration).apiMapsSettlementsGet(regionId, settlementid, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

@@ -46,6 +46,29 @@ paths:
                       geom: null
   /api/maps/settlements:
     get:
+      parameters:
+        - in: query
+          name: regionId
+          description: Opcionális szűrés. Több regionId megadható (?regionId=1&regionId=2) vagy vesszővel elválasztva (?regionId=1,2).
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int32
+          style: form
+          explode: true
+        - in: query
+          name: settlementid
+          description: Opcionális szűrés. Több település ID is megadható (?settlementid=101&settlementid=102) vagy vesszővel elválasztva (?settlementid=101,102).
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+          style: form
+          explode: true
       tags: [Maps]
       summary: Települések listázása (GeoJSON geometriával)
       description: Visszaadja az összes települést név szerinti rendezéssel. A `geom` mező GeoJSON Geometry objektum.

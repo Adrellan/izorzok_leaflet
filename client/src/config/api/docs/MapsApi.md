@@ -74,11 +74,21 @@ import {
 const configuration = new Configuration();
 const apiInstance = new MapsApi(configuration);
 
-const { status, data } = await apiInstance.apiMapsSettlementsGet();
+let regionId: Array<number>; //Opcionális szűrés. Több regionId megadható (?regionId=1&regionId=2) vagy vesszővel elválasztva (?regionId=1,2). (optional) (default to undefined)
+let settlementid: number; //Opcionális szűrés. Egy konkrét település ID-ja (egyező s.id). (optional) (default to undefined)
+
+const { status, data } = await apiInstance.apiMapsSettlementsGet(
+    regionId,
+    settlementid
+);
 ```
 
 ### Parameters
-This endpoint does not have any parameters.
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **regionId** | **Array&lt;number&gt;** | Opcionális szűrés. Több regionId megadható (?regionId&#x3D;1&amp;regionId&#x3D;2) vagy vesszővel elválasztva (?regionId&#x3D;1,2). | (optional) defaults to undefined|
+| **settlementid** | [**number**] | Opcionális szűrés. Egy konkrét település ID-ja (egyező s.id). | (optional) defaults to undefined|
 
 
 ### Return type

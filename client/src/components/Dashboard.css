@@ -1,159 +1,30 @@
-.route-ms {
-  font-size: 12px;
-}
+/* Minimal, focused styles for the sidebar MultiSelects and the dialog */
 
-.route-ms .p-multiselect-label {
-  padding: 6px 10px;
-  min-height: 28px;
-}
+/* Compact MultiSelect input */
+.route-ms { font-size: 12px; }
+.route-ms .p-multiselect-label { padding: 6px 10px; min-height: 28px; }
+.route-ms .p-multiselect-trigger { width: 32px; }
+.route-ms .p-multiselect-token { padding: 4px 8px; margin: 2px; font-size: 11px; }
 
-/* Ez a kis nyíl a multiselectben */
-.route-ms .p-multiselect-trigger {
-  width: 32px;
-}
+/* Panel width + header filter alignment */
+.route-ms-panel { width: 400px !important; min-width: 320px !important; }
+.route-ms-panel .p-multiselect-header { padding: 10px 12px; }
+.route-ms-panel .p-multiselect-filter-container { position: relative; display: flex; align-items: center; }
+.route-ms-panel .p-multiselect-filter { width: 100%; padding-right: 2rem; box-sizing: border-box; }
+.route-ms-panel .p-multiselect-filter-icon { position: absolute; right: .6rem; top: 50%; transform: translateY(-50%); pointer-events: none; }
 
-/* Ez a chipek mérete a multiselectben */
-.route-ms .p-multiselect-token {
-  padding: 4px 8px;
-  margin: 2px;
-  font-size: 11px;
-}
+/* Item spacing and checkbox sizing for readability */
+.route-ms-panel .p-multiselect-items .p-multiselect-item { display: flex; align-items: center; }
+.route-ms-panel .p-checkbox .p-checkbox-box { width: 14px; height: 14px; }
+.route-ms-panel .p-checkbox .p-checkbox-icon { font-size: 10px; }
 
-.route-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+/* Sidebar buttons (dark theme) */
+.custom-sidebar-button { background-color: #1e293b !important; border-color: #334155 !important; color: #e2e8f0 !important; }
+.custom-sidebar-button:hover { background-color: #334155 !important; border-color: #475569 !important; }
 
-/* ===== COLORPICKER MÉRET ===== */
-.route-colorpicker .p-colorpicker-preview {
-  width: 10px !important;
-  height: 10px !important;
-  border-radius: 3px;
-}
-
-/* ===== LENYÍLÓ PANEL SZÉLESSÉGE ===== */
-.route-ms-panel {
-  width: 400px !important;
-  min-width: 400px !important;
-}
-
-/* --------------------------------------- */
-/* Directions button styling */
-.route-directions-btn {
-  width: 30px !important;
-  height: 30px !important;
-  min-width: 30px !important;
-  min-height: 30px !important;
-  padding: 0 !important;
-}
-
-.route-directions-btn .p-button-icon {
-  font-size: 16px !important;
-}
-/* --------------------------------------- */
-
-/* Ez az a header, amiben benn van a kereső */
-.route-ms-panel .p-multiselect-header {
-  padding: 10px 12px;
-}
-
-/* MULTISELECT KERESŐPANEL MÉRETEK TE OSTOBA */
-.route-ms-panel .p-inputtext {
-  height: 26px;     
-  font-size: 13px;    
-  padding: 8px 12px;  
-}
-
-.route-ms-panel .p-multiselect-items .p-multiselect-item {
-  display: flex;
-  align-items: center;
-}
-
-.route-ms-panel .p-checkbox .p-checkbox-box {
-  width: 14px;
-  height: 14px;
-}
-
-.route-ms-panel .p-checkbox .p-checkbox-icon {
-  font-size: 10px;
-}
-
-.route-ms-panel .p-multiselect-close,
-.route-ms-panel .p-multiselect-select-all {
-  font-size: 12px;
-}
-
-.route-item { 
-  flex: 1; 
-  display: flex; 
-  align-items: center; 
-  width: 100%;  
-  justify-content: space-between; 
-}
-
-.route-ms-panel .p-multiselect-item .p-multiselect-item-label {
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between; 
-  min-width: 0;         
-  gap: 8px;
-}
-
-.route-item { 
-  flex: 1; 
-  display: flex; 
-  align-items: center; 
-  width: 100%; 
-}
-
-.route-item span { 
-  flex: 1; 
-  min-width: 0; 
-}
-
-/* Pin actions to the far right inside each item */
-.route-ms-panel .p-multiselect-items .p-multiselect-item {
-  position: relative;
-  padding-right: 38px; /* room for button (10px) + gap (4px) + color (10px) + margin (8px) */
-}
-
-.route-actions {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.route-colorwrap {
-  flex: 0 0 auto;
-}
-/* Absolute right-side action cluster (directions + color) */
-.route-ms-panel .p-multiselect-items .p-multiselect-item {
-  position: relative;
-  padding-right: 64px; /* leave room for actions */
-}
-.route-actions {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.route-label { display: inline-block; width: auto; overflow: visible; text-overflow: clip; }
-
-/* Ensure the PrimeReact label container takes full width, leaving space for right-side actions */
-.route-ms-panel .p-multiselect-item .p-multiselect-item-label {
-  display: block !important;
-  width: 100%;
-  padding-right: 72px; /* keep text clear of right-side actions */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+/* Full-screen-ish dialog styled like sidebar */
+.dashboard-dialog { width: 80vw !important; height: 100vh !important; }
+.dashboard-dialog .p-dialog-content { height: calc(100vh - 56px); padding: 0; }
+.dashboard-dialog .p-dialog-header, .dashboard-dialog .p-dialog-content { background: #0f172a; color: #e2e8f0; }
+.dashboard-dialog .p-dialog-title { color: #e2e8f0; }
+.dashboard-dialog .p-dialog-header .p-dialog-header-icon { color: #e2e8f0; }

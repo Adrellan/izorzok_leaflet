@@ -24,10 +24,27 @@ export const useDashboard = () => {
     () => (regions ?? []).map((r) => ({ label: r.name ?? `Régió ${r.id}`, value: r.id })),
     [regions]
   );
+  const filteredSettlements = useMemo(() => {
+    if (!settlements) return [] as SettlementWithGeom[];
+    if (!selectedRegionIds || selectedRegionIds.length === 0) return settlements;
+    const allowed = new Set(selectedRegionIds);
+    return settlements.filter((s) => (s.regionid ?? -1) !== -1 && allowed.has(s.regionid as number));
+  }, [settlements, selectedRegionIds]);
+
   const settlementOptions = useMemo(
-    () => (settlements ?? []).map((s) => ({ label: s.name ?? `Település ${s.id}`, value: s.id })),
-    [settlements]
+    () => filteredSettlements.map((s) => ({ label: s.name ?? `Település ${s.id}`, value: s.id })),
+    [filteredSettlements]
   );
+
+  // Ensure selected settlements remain valid when region filter changes
+  useEffect(() => {
+    if (!selectedSettlementIds || selectedSettlementIds.length === 0) return;
+    const allowedIds = new Set(filteredSettlements.map((s) => s.id));
+    const next = selectedSettlementIds.filter((id) => allowedIds.has(id));
+    if (next.length !== selectedSettlementIds.length) {
+      dispatch(setSelectedSettlementIds(next));
+    }
+  }, [filteredSettlements]);
 
   const handleRegionSelectionChange = (ids: number[]) => {
     dispatch(setSelectedRegionIds(ids));
@@ -46,4 +63,3 @@ export const useDashboard = () => {
     selectedSettlementIds,
   };
 };
-
