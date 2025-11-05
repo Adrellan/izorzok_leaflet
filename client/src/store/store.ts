@@ -1,9 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { mapReducer } from './map/map.store'
+import { geoReducer } from './geo/geo.store'
 
 export const store = configureStore({
 	reducer: {
 		map: mapReducer,
+		geo: geoReducer,
 	},
 })
 

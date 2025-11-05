@@ -14,8 +14,8 @@ interface MapState {
 		lng: number,
 	},
 	zoom: number,
-	selectedRegionIds?: number[],
-	selectedSettlementIds?: number[],
+	selectedRegionIds: number[],
+	selectedSettlementIds: number[],
 }
 
 

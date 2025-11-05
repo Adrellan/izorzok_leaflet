@@ -7,9 +7,11 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
+import { Category } from "./Category";
 import { Settlement } from "./Settlement";
 import { RecipeEmbedding } from "./RecipeEmbedding";
 
+@Index("fki_Recipe_category_id_fkey", ["categoryId"], {})
 @Index("Recipe_pkey", ["id"], { unique: true })
 @Index("Recipe_url_key", ["url"], { unique: true })
 @Index("recipe_year_idx", ["year"], {})
@@ -38,6 +40,13 @@ export class Recipe {
     default: () => "now()",
   })
   createdAt: Date;
+
+  @Column("integer", { name: "category_id", nullable: true })
+  categoryId: number | null;
+
+  @ManyToOne(() => Category, (category) => category.recipes)
+  @JoinColumn([{ name: "category_id", referencedColumnName: "id" }])
+  category: Category;
 
   @ManyToOne(() => Settlement, (settlement) => settlement.recipes)
   @JoinColumn([{ name: "settlement_id", referencedColumnName: "id" }])

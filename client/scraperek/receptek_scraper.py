@@ -1,4 +1,4 @@
-import argparse
+﻿import argparse
 import csv
 import json
 from urllib.parse import urlsplit
@@ -52,8 +52,8 @@ def read_settlements(file_path: str) -> List[str]:
                 name = line.strip()
                 if not name:
                     continue
-                # Remove seasonal/holiday suffixes like " – Karácsony"
-                name = re.sub(r"\s+–\s+.*$", "", name)
+                # Remove seasonal/holiday suffixes like " â€“ KarĂˇcsony"
+                name = re.sub(r"\s+â€“\s+.*$", "", name)
                 name = re.sub(r"\s+-\s+.*$", "", name)
                 if name and name not in settlements:
                     settlements.append(name)
@@ -123,6 +123,7 @@ class Recipe:
     year: Optional[int]
     settlement: Optional[str]
     ingredients: List[str]
+    category_id: Optional[int] = None
 
 
 # -----------------------------
@@ -200,7 +201,7 @@ def parse_listing_links(html: str) -> List[str]:
 
 
 def _parse_ingredients_from_text(text: str) -> List[str]:
-    """Extract ingredients from a single paragraph that contains a label like 'Hozzávalók:'.
+    """Extract ingredients from a single paragraph that contains a label like 'HozzĂˇvalĂłk:'.
 
     Strategy:
     - Find the label (accent tolerant) and take the substring after it.
@@ -208,16 +209,16 @@ def _parse_ingredients_from_text(text: str) -> List[str]:
     """
     if not text:
         return []
-    # Match 'Hozzávalók' with accent tolerance
-    m = re.search(r"(?i)Hozz[aá]val[oó]k\s*[:：]?", text)
+    # Match 'HozzĂˇvalĂłk' with accent tolerance
+    m = re.search(r"(?i)Hozz[aĂˇ]val[oĂł]k\s*[:ďĽš]?", text)
     if not m:
         return []
     tail = text[m.end():].strip()
     if not tail:
         return []
     # Prefer to keep the entire tail as a single item unless clear separators exist.
-    if "\n" in tail or "•" in tail or ";" in tail:
-        parts = re.split(r"\n+|•|;", tail)
+    if "\n" in tail or "â€˘" in tail or ";" in tail:
+        parts = re.split(r"\n+|â€˘|;", tail)
     else:
         parts = [tail]
     def _clean_labels(s: str) -> str:
@@ -244,7 +245,7 @@ def _parse_ingredients_from_text(text: str) -> List[str]:
             t = re.sub(r"\([^()]*\)", "", t)
         # collapse spaces and trim leftover separators
         t = re.sub(r"\s+", " ", t).strip()
-        t = t.strip(" ;|·•")
+        t = t.strip(" ;|Â·â€˘")
         return t
 
     items: List[str] = []
@@ -255,7 +256,7 @@ def _parse_ingredients_from_text(text: str) -> List[str]:
         if not p:
             continue
         # Avoid capturing typical instruction openers if they slip in
-        if re.match(r"(?i)A\s+s[uü]t[eé]s|Elk[eé]sz[ií]t", p):
+        if re.match(r"(?i)A\s+s[uĂĽ]t[eĂ©]s|Elk[eĂ©]sz[iĂ­]t", p):
             continue
         items.append(p)
     # Ensure stable single-spacing of every item
@@ -265,7 +266,7 @@ def _parse_ingredients_from_text(text: str) -> List[str]:
 def find_text_block_after_heading(content_root: Tag, heading_keywords: List[str]) -> List[str]:
     """Find ingredients near a heading/label matching keywords, including the same paragraph.
 
-    - If the matched element itself contains 'Hozzávalók', extract from it.
+    - If the matched element itself contains 'HozzĂˇvalĂłk', extract from it.
     - Else, collect list items or paragraphs from following siblings until next heading.
     """
     norm_keys = [normalize_text(k) for k in heading_keywords]
@@ -278,7 +279,7 @@ def find_text_block_after_heading(content_root: Tag, heading_keywords: List[str]
             same_text = el.get_text(" ", strip=True)
             items = _parse_ingredients_from_text(same_text)
             if items:
-                return [i for i in (t.strip("-• ") for t in items) if i]
+                return [i for i in (t.strip("-â€˘ ") for t in items) if i]
 
             # Otherwise, gather subsequent sibling content until next heading
             items = []
@@ -311,7 +312,7 @@ def find_text_block_after_heading(content_root: Tag, heading_keywords: List[str]
                 if items:
                     # Stop once we collected some items from the immediate block
                     break
-            return [i for i in (t.strip("-• ") for t in items) if i]
+            return [i for i in (t.strip("-â€˘ ") for t in items) if i]
     return []
 
 
@@ -330,7 +331,7 @@ def _is_italic(el: Tag) -> bool:
 def find_ingredients_by_italics(content_root: Tag) -> List[str]:
     """Prefer ingredients contained in an italic paragraph or inline block.
 
-    The site often formats the whole 'Hozzávalók: …' as italics. We
+    The site often formats the whole 'HozzĂˇvalĂłk: â€¦' as italics. We
     look for italic elements containing the label and parse from there.
     """
     # 1) Direct italic elements
@@ -345,19 +346,19 @@ def find_ingredients_by_italics(content_root: Tag) -> List[str]:
             continue
         items = _parse_ingredients_from_text(text)
         if items:
-            return [i for i in (t.strip("-• ") for t in items) if i]
+            return [i for i in (t.strip("-â€˘ ") for t in items) if i]
     # 2) Paragraphs that contain an italic child with the label
     for p in content_root.select("p"):
         it = p.find(["em", "i"]) or p
         text = clean_text(p.get_text(" ", strip=True))
         items = _parse_ingredients_from_text(text)
         if items:
-            return [i for i in (t.strip("-• ") for t in items) if i]
+            return [i for i in (t.strip("-â€˘ ") for t in items) if i]
     return []
 
 
 def extract_year(soup: BeautifulSoup, content_root: Optional[Tag]) -> Optional[int]:
-    # 1) Look for explicit labels: Év: 2021
+    # 1) Look for explicit labels: Ă‰v: 2021
     haystacks: List[str] = []
     if content_root is not None:
         haystacks.append(content_root.get_text("\n", strip=True))
@@ -368,7 +369,7 @@ def extract_year(soup: BeautifulSoup, content_root: Optional[Tag]) -> Optional[i
             if dt:
                 haystacks.append(dt)
     blob = "\n".join(haystacks)
-    m = re.search(r"(?i)(?:év|dátum)\s*[:–-]?\s*(20\d{2}|19\d{2})", blob)
+    m = re.search(r"(?i)(?:Ă©v|dĂˇtum)\s*[:â€“-]?\s*(20\d{2}|19\d{2})", blob)
     if m:
         return int(m.group(1))
     # 2) Any year-like number in the blob
@@ -414,6 +415,80 @@ def extract_settlement(
     return None
 
 
+CATEGORY_ID_BY_NAME = {
+    1: 'Eloetelek, levesek',
+    2: 'Konnyu etelek',
+    3: 'Haletelek',
+    4: 'Szarnyas etelek',
+    5: 'Serteshus etelek',
+    6: 'Egyeb husetelek',
+    7: 'Koretek',
+    8: 'Sos etelek',
+    9: 'Sos tesztak',
+    10: 'Kukoricas etelek',
+    11: 'Edes tesztak',
+    12: 'Retesek, belesek',
+    13: 'Sutemenyek, tortak',
+}
+
+_CATEGORY_NAME_TO_ID_NORM: Dict[str, int] = { normalize_text(v): k for k, v in CATEGORY_ID_BY_NAME.items() }
+
+
+def extract_category_id(soup: BeautifulSoup) -> Optional[int]:
+    texts: List[str] = []
+    hrefs: List[str] = []
+    for a in soup.select("nav.breadcrumbs a, .cat-links a, a[rel='category tag'], .categories a, .category a, .tags-links a"):
+        txt = clean_text(a.get_text(" ", strip=True))
+        href = a.get("href") or ""
+        if txt:
+            texts.append(txt)
+        if href:
+            hrefs.append(href)
+    for h in hrefs:
+        try:
+            path = (urlsplit(h).path or "").strip('/').lower()
+        except Exception:
+            path = h.lower()
+        slug_map = {
+            'elotelek-levesek': 1,
+            'konnyu-etelek': 2,
+            'haletelek': 3,
+            'szarnyas-etelek': 4,
+            'sertes': 5,
+            'egyeb-husetelek': 6,
+            'koretek': 7,
+            'sos-etelek': 8,
+            'sos-tesztak': 9,
+            'kukoricas-etelek': 10,
+            'edes-tesztak': 11,
+            'retesek-belesek': 12,
+            'sutemenyek-tortak': 13,
+        }
+        for frag, cid in slug_map.items():
+            if frag in path:
+                return cid
+    for t in texts:
+        nt = normalize_text(t)
+        norm_map = { normalize_text(v): k for k, v in CATEGORY_ID_BY_NAME.items() }
+        if nt in norm_map:
+            return norm_map[nt]
+    for t in texts:
+        nt = normalize_text(t)
+        for key, cid in { normalize_text(v): k for k, v in CATEGORY_ID_BY_NAME.items() }.items():
+            if key in nt or nt in key:
+                return cid
+    for meta in soup.select('.entry-meta, .post-meta, .postinfo, .post-info, .meta, .entry-footer, .entry-taxonomies'):
+        raw = clean_text(meta.get_text(' ', strip=True))
+        if not raw:
+            continue
+        for part in [p.strip() for p in raw.split(',') if p.strip()]:
+            nt = normalize_text(part)
+            for key, cid in { normalize_text(v): k for k, v in CATEGORY_ID_BY_NAME.items() }.items():
+                if key in nt or nt in key:
+                    return cid
+    return None
+
+
 def parse_recipe(session: requests.Session, url: str, settlements: List[str], delay: float = 0.5) -> Optional[Recipe]:
     html = fetch_html(session, url)
     if not html:
@@ -427,11 +502,11 @@ def parse_recipe(session: requests.Session, url: str, settlements: List[str], de
     # Content root
     content_root = soup.select_one(".entry-content, .post-content, article")
 
-    # Ingredients: prefer italic paragraph with 'Hozzávalók', then fallback to heading-based
+    # Ingredients: prefer italic paragraph with 'HozzĂˇvalĂłk', then fallback to heading-based
     ingredients = find_ingredients_by_italics(content_root or soup)
     if not ingredients:
         ingredients = find_text_block_after_heading(
-            content_root or soup, ["Hozzávalók", "Hozzavalok", "Hozzávaló"]
+            content_root or soup, ["Hozzávalók", "Hozzavalok", "Hozzávalók"]
         )
 
     # Year
@@ -439,9 +514,11 @@ def parse_recipe(session: requests.Session, url: str, settlements: List[str], de
 
     # Settlement
     settlement = extract_settlement(soup, content_root, settlements)
+    # Category
+    category_id = extract_category_id(soup)
 
     time.sleep(delay)
-    return Recipe(url=url, title=title, year=year, settlement=settlement, ingredients=ingredients)
+    return Recipe(url=url, title=title, year=year, settlement=settlement, ingredients=ingredients, category_id=category_id)
 
 
 def iter_listing_pages(session: requests.Session, start_page: int, end_page: Optional[int]) -> Iterable[Tuple[int, str]]:
@@ -478,7 +555,7 @@ def save_csv(path: str, rows: Iterable[Recipe]) -> None:
     rows = list(rows)
     with open(path, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["url", "title", "year", "settlement", "ingredients"])
+        w.writerow(["url", "title", "year", "settlement", "ingredients", "category_id"])
         for r in rows:
             ingredients_str = normalize_spaces(" | ".join((r.ingredients or [])))
             w.writerow([
@@ -487,14 +564,15 @@ def save_csv(path: str, rows: Iterable[Recipe]) -> None:
                 r.year if r.year is not None else "",
                 normalize_spaces(r.settlement or ""),
                 ingredients_str,
+                r.category_id if r.category_id is not None else "",
             ])
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="Ízőrzők receptek scraper")
+    parser = argparse.ArgumentParser(description="Ízőrző receptek scraper")
     parser.add_argument("--start-page", type=int, default=1, help="Kezdő oldalszám")
     parser.add_argument("--end-page", type=int, default=None, help="Utolsó oldalszám (auto, ha nincs megadva)")
-    parser.add_argument("--delay", type=float, default=0.8, help="Késleltetés kérések között (másodperc)")
+    parser.add_argument("--delay", type=float, default=0.8, help="Késleltetés kérdések között (másodperc)")
     parser.add_argument("--retries", type=int, default=3, help="Újrapróbálkozások száma")
     parser.add_argument("--out-json", type=str, default="receptek.jsonl", help="JSONL kimeneti fájl")
     parser.add_argument("--out-csv", type=str, default="receptek.csv", help="CSV kimeneti fájl")
@@ -518,7 +596,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"Listing beolvasása: {LISTING_URL}")
         # fasz
         for page_num, html in iter_listing_pages(session, args.start_page, args.end_page):
-            print(f"- Oldal #{page_num} feldolgozása…")
+            print(f"- Oldal #{page_num} feldolgozása...")
             links = parse_listing_links(html)
             print(f"  Talált linkek: {len(links)}")
             all_links.extend(links)
@@ -535,7 +613,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         if recipe:
             recipes.append(recipe)
 
-    # Mentés
+    # MentĂ©s
     if args.out_json:
         save_jsonl(args.out_json, recipes)
         print(f"JSONL mentve: {args.out_json}")
@@ -553,3 +631,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Megszakítva.")
         raise
+
+

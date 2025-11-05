@@ -6,12 +6,18 @@
 .route-ms .p-multiselect-trigger { width: 32px; }
 .route-ms .p-multiselect-token { padding: 4px 8px; margin: 2px; font-size: 11px; }
 
+/* Match Dropdown styling/width with MultiSelect */
+.route-ms.p-dropdown { width: 100%; font-size: 12px; }
+/* Ensure dropdown input height matches multiselect */
+.route-ms .p-dropdown-label { padding: 6px 10px !important; min-height: 28px; line-height: 16px; }
+.route-ms.p-dropdown .p-dropdown-trigger { width: 32px; }
+
 /* Panel width + header filter alignment */
 .route-ms-panel { width: 400px !important; min-width: 320px !important; }
-.route-ms-panel .p-multiselect-header { padding: 10px 12px; }
-.route-ms-panel .p-multiselect-filter-container { position: relative; display: flex; align-items: center; }
-.route-ms-panel .p-multiselect-filter { width: 100%; padding-right: 2rem; box-sizing: border-box; }
-.route-ms-panel .p-multiselect-filter-icon { position: absolute; right: .6rem; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.route-ms-panel .p-multiselect-header, .route-ms-panel .p-dropdown-header { padding: 10px 12px; }
+.route-ms-panel .p-multiselect-filter-container, .route-ms-panel .p-dropdown-filter-container { position: relative; display: flex; align-items: center; }
+.route-ms-panel .p-multiselect-filter, .route-ms-panel .p-dropdown-filter { width: 100%; padding-right: 2rem; box-sizing: border-box; }
+.route-ms-panel .p-multiselect-filter-icon, .route-ms-panel .p-dropdown-filter-icon { position: absolute; right: .6rem; top: 50%; transform: translateY(-50%); pointer-events: none; }
 
 /* Item spacing and checkbox sizing for readability */
 .route-ms-panel .p-multiselect-items .p-multiselect-item { display: flex; align-items: center; }
@@ -19,7 +25,7 @@
 .route-ms-panel .p-checkbox .p-checkbox-icon { font-size: 10px; }
 
 /* Sidebar buttons (dark theme) */
-.custom-sidebar-button { background-color: #1e293b !important; border-color: #334155 !important; color: #e2e8f0 !important; }
+.custom-sidebar-button { background-color: #1e293b !important; border-color: #334155 !important; color: #e2e8f0 !important; height: 3vh; }
 .custom-sidebar-button:hover { background-color: #334155 !important; border-color: #475569 !important; }
 
 /* Full-screen-ish dialog styled like sidebar */

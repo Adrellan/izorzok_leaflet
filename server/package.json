@@ -9,7 +9,12 @@
     "start": "node dist/index.js",
     "entities:pull": "node scripts/entities-pull.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "openapi:generate": "openapi-generator-cli generate -i docs/openapi.yaml -g typescript-axios -o ../client/src/config/api"
+    "openapi:generate": "openapi-generator-cli generate -i docs/openapi.yaml -g typescript-axios -o ../client/src/config/api",
+    "typeorm": "npx tsx ./node_modules/typeorm/cli",
+    "typeorm:run-migrations": "npm run typeorm -- -d ./src/db/dataSource.ts migration:run",
+    "typeorm:generate-migration": "npm run typeorm -- -d ./src/db/dataSource.ts migration:generate ./src/db/migrations/$npm_config_name",
+    "typeorm:create-migration": "npm run typeorm -- migration:create ./src/db/migrations/$npm_config_name",
+    "typeorm:revert-migration": "npm run typeorm -- -d ./src/db/dataSource.ts migration:revert"
   },
   "keywords": [],
   "author": "",

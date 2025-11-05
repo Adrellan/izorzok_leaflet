@@ -13,7 +13,7 @@ def normalize_spaces(s: str) -> str:
     return re.sub(r"\s+", " ", (s or "").strip())
 
 
-def read_csv(path: str) -> Iterable[Tuple[str, str, Optional[int], Optional[str], str]]:
+def read_csv(path: str) -> Iterable[Tuple[str, str, Optional[int], Optional[str], str, Optional[int]]]:
     with open(path, "r", encoding="utf-8") as f:
         r = csv.DictReader(f)
         for row in r:
@@ -23,10 +23,12 @@ def read_csv(path: str) -> Iterable[Tuple[str, str, Optional[int], Optional[str]
             year = int(year) if str(year).strip().isdigit() else None
             settlement = normalize_spaces(row.get("settlement", "") or "")
             ingredients = normalize_spaces(row.get("ingredients", ""))
-            yield url, title, year, settlement or None, ingredients
+            cat = row.get("category_id")
+            category_id = int(cat) if str(cat).strip().isdigit() else None
+            yield url, title, year, settlement or None, ingredients, category_id
 
 
-def read_jsonl(path: str) -> Iterable[Tuple[str, str, Optional[int], Optional[str], str]]:
+def read_jsonl(path: str) -> Iterable[Tuple[str, str, Optional[int], Optional[str], str, Optional[int]]]:
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             if not line.strip():
@@ -38,7 +40,9 @@ def read_jsonl(path: str) -> Iterable[Tuple[str, str, Optional[int], Optional[st
             year = int(year) if year is not None else None
             settlement = normalize_spaces(obj.get("settlement", "") or "") or None
             ingredients = normalize_spaces(" | ".join(obj.get("ingredients", [])))
-            yield url, title, year, settlement, ingredients
+            category_id = obj.get("category_id")
+            category_id = int(category_id) if category_id is not None else None
+            yield url, title, year, settlement, ingredients, category_id
 
 
 def connect_pg(dsn: Optional[str], host: Optional[str], port: Optional[int], db: Optional[str], user: Optional[str], password: Optional[str]):
@@ -118,21 +122,22 @@ def main(argv: Optional[List[str]] = None) -> int:
             st_model = load_st_model(args.st_model)
 
         with conn.cursor() as cur:
-            for (url, title, year, settlement_name, ingredients_text) in rows_iter:
+            for (url, title, year, settlement_name, ingredients_text, category_id) in rows_iter:
                 # Lookup settlement_id by name
                 settlement_id = lookup_settlement_id(cur, settlement_name)
 
                 cur.execute(
-                    'INSERT INTO public."Recipe" (url, title, year, settlement_id, settlement_name, ingredients_text)\n'
-                    'VALUES (%s, %s, %s, %s, %s, %s)\n'
+                    'INSERT INTO public."Recipe" (url, title, year, settlement_id, settlement_name, ingredients_text, category_id)\n'
+                    'VALUES (%s, %s, %s, %s, %s, %s, %s)\n'
                     'ON CONFLICT (url) DO UPDATE SET\n'
                     '  title = EXCLUDED.title,\n'
                     '  year = EXCLUDED.year,\n'
                     '  settlement_id = EXCLUDED.settlement_id,\n'
                     '  settlement_name = EXCLUDED.settlement_name,\n'
-                    '  ingredients_text = EXCLUDED.ingredients_text\n'
+                    '  ingredients_text = EXCLUDED.ingredients_text,\n'
+                    '  category_id = EXCLUDED.category_id\n'
                     'RETURNING id',
-                    (url, title, year, settlement_id, settlement_name, ingredients_text),
+                    (url, title, year, settlement_id, settlement_name, ingredients_text, category_id),
                 )
                 recipe_id = cur.fetchone()[0]
 

@@ -1,4 +1,4 @@
-openapi: 3.0.3
+﻿openapi: 3.0.3
 info:
   title: Recipe Maps API
   version: 1.0.0
@@ -94,6 +94,92 @@ paths:
                       geom:
                         type: Polygon
                         coordinates: [[[19.6,46.9],[19.8,46.9],[19.8,47.0],[19.6,47.0],[19.6,46.9]]]
+  /api/recipes:
+    get:
+      tags: [Recipes]
+      summary: Receptek listázása
+      description: Visszaadja az összes receptet, opcionális szűrőkkel. A válasz tartalmazza az összes találat számát is.
+      parameters:
+        - in: query
+          name: year
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int32
+          style: form
+          explode: true
+        - in: query
+          name: settlementId
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+          style: form
+          explode: true
+        - in: query
+          name: categoryId
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int32
+          style: form
+          explode: true
+      responses:
+        "200":
+          description: Sikeres lekérdezés
+          headers:
+            X-Total-Count:
+              description: Találatok teljes száma a szűrők figyelembevételével
+              schema:
+                type: integer
+                format: int64
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeListResponse"
+              examples:
+                sample:
+                  value:
+                    count: 2
+                    items:
+                      - url: "https://www.izorzok.hu/foispan-fule/"
+                        title: "Főispán füle"
+                        year: 2025
+                        settlement_id: 123
+                        category_id: 13
+                      - url: "https://www.izorzok.hu/valami/"
+                        title: "Valami recept"
+                        year: null
+                        settlement_id: null
+                        category_id: 7
+
+  /api/recipes/categories:
+    get:
+      tags: [Recipes]
+      summary: Kategóriák listázása
+      description: Visszaadja az összes recept kategóriát név szerinti rendezéssel.
+      responses:
+        '200':
+          description: Sikeres lekérdezés
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+              examples:
+                sample:
+                  value:
+                    - id: 1
+                      name: Levesek
+                    - id: 2
+                      name: Főételek
 components:
   schemas:
     Region:
@@ -166,3 +252,48 @@ components:
             geom:
               nullable: true
               $ref: '#/components/schemas/Geometry'
+
+    RecipeListItem:
+      type: object
+      properties:
+        url:
+          type: string
+        title:
+          type: string
+        year:
+          type: integer
+          format: int32
+          nullable: true
+        settlement_id:
+          type: integer
+          format: int64
+          nullable: true
+        category_id:
+          type: integer
+          format: int32
+          nullable: true
+
+    RecipeListResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          format: int64
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipeListItem'
+      required: [count, items]
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: Kategória azonosítója
+        name:
+          type: string
+          nullable: true
+          description: Kategória neve
+      required: [id]

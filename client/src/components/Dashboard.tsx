@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MultiSelect } from 'primereact/multiselect';
+import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import './Dashboard.css';
 import { useDashboard } from '../hooks/useDashboard';
@@ -35,16 +36,20 @@ export default function Dashboard() {
   const {
     regionOptions,
     settlementOptions,
+    categoryOptions,
     selectedRegionIds,
     selectedSettlementIds,
+    selectedCategory,
     handleRegionSelectionChange,
     handleSettlementSelectionChange,
+    handleCategorySelectionChange,
   } = useDashboard();
 
   return (
     <aside style={asideStyle}>
       <div style={brandStyle}>Ízőrzők</div>
       <div style={selectWrapStyle}>
+
         <div style={{ padding: '6px 12px', color: '#94a3b8', fontSize: 12 }}>Régiók</div>
         <div style={{ padding: '0 8px 12px 8px' }}>
           <MultiSelect
@@ -77,19 +82,29 @@ export default function Dashboard() {
           />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20, padding: '0 8px' }}>
-          <Button
-            type="button"
-            label="Vármegyei statisztikák"
-            className="w-full custom-sidebar-button"
-            onClick={() => setStatsOpen(true)}
-          />
-          <Button
-            type="button"
-            label="Receptek"
-            className="w-full custom-sidebar-button"
+        <div style={{ padding: '6px 12px', color: '#94a3b8', fontSize: 12, marginTop: '10px' }}>Kategóriák</div>
+        <div style={{ padding: '0 8px' }}>
+          <Dropdown
+            options={categoryOptions}
+            value={selectedCategory}
+            onChange={(e) => handleCategorySelectionChange(e.value ?? null)}
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Válassz kategóriát"
+            className="route-ms w-full"
+            filter
+            panelClassName="route-ms-panel"
           />
         </div>
+
+        <Button
+          type="button"
+          label="Vármegyei statisztikák"
+          className="w-full custom-sidebar-button"
+          style={{ "marginTop": "3vh" }}
+          onClick={() => setStatsOpen(true)}
+        />
+
       </div>
 
       <StatsDialog visible={statsOpen} onHide={() => setStatsOpen(false)} />

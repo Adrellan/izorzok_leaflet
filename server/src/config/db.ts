@@ -1,4 +1,4 @@
-import { getDataSource } from './data-source';
+import { getDataSource } from '../db/dataSource';
 
 export { getDataSource };
 

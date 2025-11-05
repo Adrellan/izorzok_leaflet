@@ -4,9 +4,13 @@ api.ts
 base.ts
 common.ts
 configuration.ts
+docs/Category.md
 docs/Geometry.md
 docs/GeometryCoordinates.md
 docs/MapsApi.md
+docs/RecipeListItem.md
+docs/RecipeListResponse.md
+docs/RecipesApi.md
 docs/Region.md
 docs/RegionWithGeom.md
 docs/Settlement.md

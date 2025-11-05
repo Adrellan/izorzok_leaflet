@@ -1,41 +1,31 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useAppSelector } from "./hooks";
-import { MapsApi } from "../config/api/api";
 import type { RegionWithGeom, SettlementWithGeom } from "../config/api/api";
-import axios from "axios";
-import { BASE_PATH } from "../config/api/base";
 
 export const useMapviewer = () => {
   const { coordinates, zoom, selectedRegionIds, selectedSettlementIds } = useAppSelector((state) => state.map);
-  const [regions, setRegions] = useState<RegionWithGeom[]>([]);
-  const [settlements, setSettlements] = useState<SettlementWithGeom[]>([]);
+  const allRegions = useAppSelector((state) => state.geo.regions) as RegionWithGeom[];
+  const allSettlements = useAppSelector((state) => state.geo.settlements) as SettlementWithGeom[];
 
-  useEffect(() => {
-    const api = new MapsApi();
-    const regionIdsArg = (selectedRegionIds && selectedRegionIds.length > 0) ? selectedRegionIds : undefined;
-    api.apiMapsRegionsGet(regionIdsArg)
-      .then((res) => {
-        setRegions(res.data ?? []);
-      })
-      .catch(() => {});
-  }, [selectedRegionIds]);
+  const regions = useMemo(() => {
+    if (!allRegions) return [] as RegionWithGeom[];
+    if (!selectedRegionIds || selectedRegionIds.length === 0) return allRegions;
+    const allowed = new Set(selectedRegionIds);
+    return allRegions.filter((r) => allowed.has(r.id));
+  }, [allRegions, selectedRegionIds]);
 
-  useEffect(() => {
-    const params: any = {};
-    if (selectedRegionIds && selectedRegionIds.length > 0) {
-      // send as CSV to match backend parsing
-      params.regionId = selectedRegionIds.join(',');
-    }
+  const settlements = useMemo(() => {
+    if (!allSettlements) return [] as SettlementWithGeom[];
     if (selectedSettlementIds && selectedSettlementIds.length > 0) {
-      // send as CSV to ensure backend parsing regardless of client serializer
-      params.settlementid = selectedSettlementIds.join(',');
+      const allowed = new Set(selectedSettlementIds);
+      return allSettlements.filter((s) => allowed.has(s.id));
     }
-
-    axios
-      .get(`${BASE_PATH}/api/maps/settlements`, { params })
-      .then((res) => setSettlements(res.data ?? []))
-      .catch(() => {});
-  }, [selectedRegionIds, selectedSettlementIds]);
+    if (selectedRegionIds && selectedRegionIds.length > 0) {
+      const allowedRegions = new Set(selectedRegionIds);
+      return allSettlements.filter((s) => s.regionid != null && allowedRegions.has(s.regionid as number));
+    }
+    return allSettlements;
+  }, [allSettlements, selectedRegionIds, selectedSettlementIds]);
 
   return {
     coordinates,
