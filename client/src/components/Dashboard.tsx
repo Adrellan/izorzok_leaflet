@@ -37,12 +37,15 @@ export default function Dashboard() {
     regionOptions,
     settlementOptions,
     categoryOptions,
+    yearOptions,
     selectedRegionIds,
     selectedSettlementIds,
     selectedCategory,
+    selectedYear,
     handleRegionSelectionChange,
     handleSettlementSelectionChange,
     handleCategorySelectionChange,
+    handleYearSelectionChange,
   } = useDashboard();
 
   return (
@@ -91,6 +94,21 @@ export default function Dashboard() {
             optionLabel="label"
             optionValue="value"
             placeholder="Válassz kategóriát"
+            className="route-ms w-full"
+            filter
+            panelClassName="route-ms-panel"
+          />
+        </div>
+
+        <div style={{ padding: '6px 12px', color: '#94a3b8', fontSize: 12, marginTop: '10px' }}>Évek</div>
+        <div style={{ padding: '0 8px' }}>
+          <Dropdown
+            options={yearOptions}
+            value={selectedYear}
+            onChange={(e) => handleYearSelectionChange(e.value ?? null)}
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Válassz évet"
             className="route-ms w-full"
             filter
             panelClassName="route-ms-panel"

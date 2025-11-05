@@ -14,6 +14,8 @@ export const useDashboard = () => {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [recipes, setRecipes] = useState<RecipeListItem[]>([]);
   const [recipeCount, setRecipeCount] = useState<number>(0);
+  const [years, setYears] = useState<number[]>([]);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const initRef = useRef(false);
 
   useEffect(() => {
@@ -36,25 +38,38 @@ export const useDashboard = () => {
       .apiRecipesCategoriesGet()
       .then((res) => setCategories(res.data ?? []))
       .catch(() => {});
-    // Recipes are fetched by the category-driven effect to avoid duplicate calls on mount
+
+    // Initial recipes will be loaded by the filter-driven effect
   }, []);
 
-  // Refetch recipes when category changes (via generated client)
-  const lastCategoryRef = useRef<number | null | undefined>(undefined);
+  // Refetch recipes when category, year, or selected settlements change (via generated client)
+  const lastFilterRef = useRef<string>("__init__");
   useEffect(() => {
     // avoid duplicate fetches if effect runs twice with same value (dev strict/hmr)
-    if (lastCategoryRef.current === selectedCategory) return;
-    lastCategoryRef.current = selectedCategory;
+    const key = `${selectedCategory ?? 'null'}|${selectedYear ?? 'null'}|${(selectedSettlementIds && selectedSettlementIds.length > 0) ? selectedSettlementIds.join(',') : 'none'}`;
+    if (lastFilterRef.current === key) return;
+    lastFilterRef.current = key;
     const recipesApi = new RecipesApi();
     const categoryArg = selectedCategory != null ? [selectedCategory] : undefined;
+    const yearArg = selectedYear != null ? [selectedYear] : undefined;
+    const settlementArg = (selectedSettlementIds && selectedSettlementIds.length > 0) ? selectedSettlementIds : undefined;
     recipesApi
-      .apiRecipesGet(undefined, undefined, categoryArg)
+      .apiRecipesGet(yearArg, settlementArg, categoryArg)
       .then((res) => {
+        const items = res.data?.items ?? [];
         setRecipeCount(res.data?.count ?? 0);
-        setRecipes(res.data?.items ?? []);
+        setRecipes(items);
+        const distinctYears = Array.from(
+          new Set(
+            items
+              .map((r) => r.year)
+              .filter((y): y is number => typeof y === 'number' && Number.isFinite(y))
+          )
+        ).sort((a, b) => b - a);
+        setYears(distinctYears);
       })
       .catch(() => {});
-  }, [selectedCategory]);
+  }, [selectedCategory, selectedYear, selectedSettlementIds]);
 
   const regionOptions = useMemo(
     () => (regions ?? []).map((r) => ({ label: r.name ?? `Régió ${r.id}`, value: r.id })),
@@ -80,6 +95,14 @@ export const useDashboard = () => {
     [categories]
   );
 
+  const yearOptions = useMemo(
+    () => [
+      { label: 'Válassz évet', value: null as number | null },
+      ...years.map((y) => ({ label: String(y), value: y }))
+    ],
+    [years]
+  );
+
   // Ensure selected settlements remain valid when region filter changes
   useEffect(() => {
     if (!selectedSettlementIds || selectedSettlementIds.length === 0) return;
@@ -102,16 +125,23 @@ export const useDashboard = () => {
     setSelectedCategory(id);
   };
 
+  const handleYearSelectionChange = (id: number | null) => {
+    setSelectedYear(id);
+  };
+
   return {
     regionOptions,
     settlementOptions,
     categoryOptions,
+    yearOptions,
     handleRegionSelectionChange,
     handleSettlementSelectionChange,
     handleCategorySelectionChange,
+    handleYearSelectionChange,
     selectedRegionIds,
     selectedSettlementIds,
     selectedCategory,
+    selectedYear,
     recipes,
     recipeCount,
   };
