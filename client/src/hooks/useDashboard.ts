@@ -16,6 +16,7 @@ export const useDashboard = () => {
   const [recipeCount, setRecipeCount] = useState<number>(0);
   const [years, setYears] = useState<number[]>([]);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [ingredients, setIngredients] = useState<string[]>([]);
   const initRef = useRef(false);
 
   useEffect(() => {
@@ -136,6 +137,10 @@ export const useDashboard = () => {
     setSelectedYear(id);
   };
 
+  const handleIngredientsChange = (vals: string[]) => {
+    setIngredients(vals);
+  };
+
   return {
     regionOptions,
     settlementOptions,
@@ -145,10 +150,12 @@ export const useDashboard = () => {
     handleSettlementSelectionChange,
     handleCategorySelectionChange,
     handleYearSelectionChange,
+    handleIngredientsChange,
     selectedRegionIds,
     selectedSettlementIds,
     selectedCategory,
     selectedYear,
+    ingredients,
     recipes,
     recipeCount,
   };

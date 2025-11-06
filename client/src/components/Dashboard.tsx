@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MultiSelect } from 'primereact/multiselect';
+import { Chips } from 'primereact/chips';
 import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import './Dashboard.css';
@@ -42,10 +43,12 @@ export default function Dashboard() {
     selectedSettlementIds,
     selectedCategory,
     selectedYear,
+    ingredients,
     handleRegionSelectionChange,
     handleSettlementSelectionChange,
     handleCategorySelectionChange,
     handleYearSelectionChange,
+    handleIngredientsChange,
   } = useDashboard();
 
   return (
@@ -112,6 +115,18 @@ export default function Dashboard() {
             className="route-ms w-full"
             filter
             panelClassName="route-ms-panel"
+          />
+        </div>
+
+        <div style={{ padding: '6px 12px', color: '#94a3b8', fontSize: 12, marginTop: '10px' }}>Hozzávalók</div>
+        <div style={{ padding: '0 8px' }}>
+          <Chips
+            value={ingredients}
+            onChange={(e) => handleIngredientsChange(e.value || [])}
+            placeholder="Gépeljen, majd nyomjon entert"
+            allowDuplicate={false}
+            className="route-ms w-full"
+            style={{ width: '100%' }}
           />
         </div>
 

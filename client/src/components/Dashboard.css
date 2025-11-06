@@ -12,6 +12,14 @@
 .route-ms .p-dropdown-label { padding: 6px 10px !important; min-height: 28px; line-height: 16px; }
 .route-ms.p-dropdown .p-dropdown-trigger { width: 32px; }
 
+/* Match Chips styling/width with MultiSelect & Dropdown */
+.route-ms.p-chips { width: 100% !important; display: block; font-size: 12px; box-sizing: border-box; }
+.route-ms.p-chips .p-chips-multiple-container { padding: 6px 10px; min-height: 28px; width: 100% !important; box-sizing: border-box; }
+.route-ms .p-chips { width: 100% !important; }
+.route-ms .p-chips-multiple-container { width: 100% !important; }
+.route-ms.p-chips .p-chips-token { padding: 4px 8px; margin: 2px; font-size: 11px; }
+.route-ms.p-chips .p-chips-input-token input { padding: 0; line-height: 16px; }
+
 /* Panel width + header filter alignment */
 .route-ms-panel { width: 400px !important; min-width: 320px !important; }
 .route-ms-panel .p-multiselect-header, .route-ms-panel .p-dropdown-header { padding: 10px 12px; }
