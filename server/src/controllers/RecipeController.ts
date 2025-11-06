@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getDataSource } from '../config/db';
 import { Recipe } from '../entities/entities/Recipe';
+import { Settlement } from '../entities/entities/Settlement';
 import { Category } from '../entities/entities/Category';
 
 export const RecipeController = Router();
@@ -10,6 +11,7 @@ export const RecipeController = Router();
 //  - year: number
 //  - settlementId: number
 //  - categoryId: number
+//  - regionId: number
 // Returns: { count: number, items: Array<{ url, title, year, settlement_id, category_id }> }
 RecipeController.get('/', async (req, res) => {
   try {
@@ -26,8 +28,29 @@ RecipeController.get('/', async (req, res) => {
     };
 
     const years = toNumArray(req.query.year as any);
-    const settlementIds = toNumArray(((req.query as any).settlementId ?? (req.query as any).settlement_id) as any);
+    let settlementIds = toNumArray(((req.query as any).settlementId ?? (req.query as any).settlement_id) as any);
     const categoryIds = toNumArray(((req.query as any).categoryId ?? (req.query as any).category_id) as any);
+    const regionIds = toNumArray(((req.query as any).regionId ?? (req.query as any).region_id) as any);
+    const hadExplicitSettlementFilter = settlementIds.length > 0;
+    let appliedRegionExpansion = false;
+
+    // If region filter present, expand it to settlement IDs and merge with explicit settlement filter
+    if (!hadExplicitSettlementFilter && regionIds.length > 0) {
+      const srows = await ds
+        .getRepository(Settlement)
+        .createQueryBuilder('s')
+        .select('s.id', 'id')
+        .where('s.regionid IN (:...regionIds)', { regionIds })
+        .getRawMany<{ id: number }>();
+      const regionSettlementIds = Array.from(new Set(srows.map((r) => r.id)));
+      if (regionSettlementIds.length > 0) {
+        settlementIds = Array.from(new Set([...(settlementIds ?? []), ...regionSettlementIds]));
+      } else {
+        // No settlements found for given regions -> force empty result
+        settlementIds = [];
+      }
+      appliedRegionExpansion = true;
+    }
 
     const qb = ds
       .getRepository(Recipe)
@@ -40,6 +63,10 @@ RecipeController.get('/', async (req, res) => {
 
     if (years.length > 0) {
       qb.andWhere('r.year IN (:...years)', { years });
+    }
+    // If only region filter was provided and it produced no settlements, force empty
+    if (appliedRegionExpansion && settlementIds.length === 0) {
+      qb.andWhere('1 = 0');
     }
     if (settlementIds.length > 0) {
       qb.andWhere('r.settlement_id IN (:...settlementIds)', { settlementIds });
@@ -54,6 +81,9 @@ RecipeController.get('/', async (req, res) => {
       .createQueryBuilder('r');
     if (years.length > 0) {
       countQb.andWhere('r.year IN (:...years)', { years });
+    }
+    if (appliedRegionExpansion && settlementIds.length === 0) {
+      countQb.andWhere('1 = 0');
     }
     if (settlementIds.length > 0) {
       countQb.andWhere('r.settlement_id IN (:...settlementIds)', { settlementIds });

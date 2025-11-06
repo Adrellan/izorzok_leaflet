@@ -54,7 +54,7 @@ No authorization required
 # **apiRecipesGet**
 > RecipeListResponse apiRecipesGet()
 
-Visszaadja az összes receptet, opcionális szűrőkkel. A válasz tartalmazza az összes találat számát is.
+Visszaadja az összes receptet, opcionális szűrőkkel (év, település, kategória, régió). A válasz tartalmazza az összes találat számát is.
 
 ### Example
 
@@ -67,11 +67,13 @@ import {
 const configuration = new Configuration();
 const apiInstance = new RecipesApi(configuration);
 
+let regionId: Array<number>; //Opcionális szűrés régió(k) szerint. Több regionId megadható (?regionId=1&regionId=2) vagy vesszővel elválasztva (?regionId=1,2). A régió szűrő település ID-kká kerül kibontásra. (optional) (default to undefined)
 let year: Array<number>; // (optional) (default to undefined)
-let settlementId: Array<number>; // (optional) (default to undefined)
-let categoryId: Array<number>; // (optional) (default to undefined)
+let settlementId: Array<number>; //Opcionális szűrés település(ek) szerint. (optional) (default to undefined)
+let categoryId: Array<number>; //Opcionális szűrés kategória(k) szerint. (optional) (default to undefined)
 
 const { status, data } = await apiInstance.apiRecipesGet(
+    regionId,
     year,
     settlementId,
     categoryId
@@ -82,9 +84,10 @@ const { status, data } = await apiInstance.apiRecipesGet(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
+| **regionId** | **Array&lt;number&gt;** | Opcionális szűrés régió(k) szerint. Több regionId megadható (?regionId&#x3D;1&amp;regionId&#x3D;2) vagy vesszővel elválasztva (?regionId&#x3D;1,2). A régió szűrő település ID-kká kerül kibontásra. | (optional) defaults to undefined|
 | **year** | **Array&lt;number&gt;** |  | (optional) defaults to undefined|
-| **settlementId** | **Array&lt;number&gt;** |  | (optional) defaults to undefined|
-| **categoryId** | **Array&lt;number&gt;** |  | (optional) defaults to undefined|
+| **settlementId** | **Array&lt;number&gt;** | Opcionális szűrés település(ek) szerint. | (optional) defaults to undefined|
+| **categoryId** | **Array&lt;number&gt;** | Opcionális szűrés kategória(k) szerint. | (optional) defaults to undefined|
 
 
 ### Return type

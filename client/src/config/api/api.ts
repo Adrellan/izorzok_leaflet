@@ -461,15 +461,16 @@ export const RecipesApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Visszaadja az összes receptet, opcionális szűrőkkel. A válasz tartalmazza az összes találat számát is.
+         * Visszaadja az összes receptet, opcionális szűrőkkel (év, település, kategória, régió). A válasz tartalmazza az összes találat számát is.
          * @summary Receptek listázása
+         * @param {Array<number>} [regionId] Opcionális szűrés régió(k) szerint. Több regionId megadható (?regionId&#x3D;1&amp;regionId&#x3D;2) vagy vesszővel elválasztva (?regionId&#x3D;1,2). A régió szűrő település ID-kká kerül kibontásra.
          * @param {Array<number>} [year] 
-         * @param {Array<number>} [settlementId] 
-         * @param {Array<number>} [categoryId] 
+         * @param {Array<number>} [settlementId] Opcionális szűrés település(ek) szerint.
+         * @param {Array<number>} [categoryId] Opcionális szűrés kategória(k) szerint.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiRecipesGet: async (year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiRecipesGet: async (regionId?: Array<number>, year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/recipes`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -481,6 +482,10 @@ export const RecipesApiAxiosParamCreator = function (configuration?: Configurati
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            if (regionId) {
+                localVarQueryParameter['regionId'] = regionId;
+            }
 
             if (year) {
                 localVarQueryParameter['year'] = year;
@@ -528,16 +533,17 @@ export const RecipesApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Visszaadja az összes receptet, opcionális szűrőkkel. A válasz tartalmazza az összes találat számát is.
+         * Visszaadja az összes receptet, opcionális szűrőkkel (év, település, kategória, régió). A válasz tartalmazza az összes találat számát is.
          * @summary Receptek listázása
+         * @param {Array<number>} [regionId] Opcionális szűrés régió(k) szerint. Több regionId megadható (?regionId&#x3D;1&amp;regionId&#x3D;2) vagy vesszővel elválasztva (?regionId&#x3D;1,2). A régió szűrő település ID-kká kerül kibontásra.
          * @param {Array<number>} [year] 
-         * @param {Array<number>} [settlementId] 
-         * @param {Array<number>} [categoryId] 
+         * @param {Array<number>} [settlementId] Opcionális szűrés település(ek) szerint.
+         * @param {Array<number>} [categoryId] Opcionális szűrés kategória(k) szerint.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiRecipesGet(year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RecipeListResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiRecipesGet(year, settlementId, categoryId, options);
+        async apiRecipesGet(regionId?: Array<number>, year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RecipeListResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiRecipesGet(regionId, year, settlementId, categoryId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['RecipesApi.apiRecipesGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -562,16 +568,17 @@ export const RecipesApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.apiRecipesCategoriesGet(options).then((request) => request(axios, basePath));
         },
         /**
-         * Visszaadja az összes receptet, opcionális szűrőkkel. A válasz tartalmazza az összes találat számát is.
+         * Visszaadja az összes receptet, opcionális szűrőkkel (év, település, kategória, régió). A válasz tartalmazza az összes találat számát is.
          * @summary Receptek listázása
+         * @param {Array<number>} [regionId] Opcionális szűrés régió(k) szerint. Több regionId megadható (?regionId&#x3D;1&amp;regionId&#x3D;2) vagy vesszővel elválasztva (?regionId&#x3D;1,2). A régió szűrő település ID-kká kerül kibontásra.
          * @param {Array<number>} [year] 
-         * @param {Array<number>} [settlementId] 
-         * @param {Array<number>} [categoryId] 
+         * @param {Array<number>} [settlementId] Opcionális szűrés település(ek) szerint.
+         * @param {Array<number>} [categoryId] Opcionális szűrés kategória(k) szerint.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiRecipesGet(year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, options?: RawAxiosRequestConfig): AxiosPromise<RecipeListResponse> {
-            return localVarFp.apiRecipesGet(year, settlementId, categoryId, options).then((request) => request(axios, basePath));
+        apiRecipesGet(regionId?: Array<number>, year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, options?: RawAxiosRequestConfig): AxiosPromise<RecipeListResponse> {
+            return localVarFp.apiRecipesGet(regionId, year, settlementId, categoryId, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -595,17 +602,18 @@ export class RecipesApi extends BaseAPI {
     }
 
     /**
-     * Visszaadja az összes receptet, opcionális szűrőkkel. A válasz tartalmazza az összes találat számát is.
+     * Visszaadja az összes receptet, opcionális szűrőkkel (év, település, kategória, régió). A válasz tartalmazza az összes találat számát is.
      * @summary Receptek listázása
+     * @param {Array<number>} [regionId] Opcionális szűrés régió(k) szerint. Több regionId megadható (?regionId&#x3D;1&amp;regionId&#x3D;2) vagy vesszővel elválasztva (?regionId&#x3D;1,2). A régió szűrő település ID-kká kerül kibontásra.
      * @param {Array<number>} [year] 
-     * @param {Array<number>} [settlementId] 
-     * @param {Array<number>} [categoryId] 
+     * @param {Array<number>} [settlementId] Opcionális szűrés település(ek) szerint.
+     * @param {Array<number>} [categoryId] Opcionális szűrés kategória(k) szerint.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof RecipesApi
      */
-    public apiRecipesGet(year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, options?: RawAxiosRequestConfig) {
-        return RecipesApiFp(this.configuration).apiRecipesGet(year, settlementId, categoryId, options).then((request) => request(this.axios, this.basePath));
+    public apiRecipesGet(regionId?: Array<number>, year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, options?: RawAxiosRequestConfig) {
+        return RecipesApiFp(this.configuration).apiRecipesGet(regionId, year, settlementId, categoryId, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

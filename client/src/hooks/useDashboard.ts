@@ -42,34 +42,41 @@ export const useDashboard = () => {
     // Initial recipes will be loaded by the filter-driven effect
   }, []);
 
-  // Refetch recipes when category, year, or selected settlements change (via generated client)
+  // Refetch recipes when category, year, settlements or regions change
   const lastFilterRef = useRef<string>("__init__");
   useEffect(() => {
     // avoid duplicate fetches if effect runs twice with same value (dev strict/hmr)
-    const key = `${selectedCategory ?? 'null'}|${selectedYear ?? 'null'}|${(selectedSettlementIds && selectedSettlementIds.length > 0) ? selectedSettlementIds.join(',') : 'none'}`;
+    const key = `${selectedCategory ?? 'null'}|${selectedYear ?? 'null'}|${(selectedSettlementIds && selectedSettlementIds.length > 0) ? selectedSettlementIds.join(',') : 'none'}|${(selectedRegionIds && selectedRegionIds.length > 0) ? selectedRegionIds.join(',') : 'none'}`;
     if (lastFilterRef.current === key) return;
     lastFilterRef.current = key;
     const recipesApi = new RecipesApi();
-    const categoryArg = selectedCategory != null ? [selectedCategory] : undefined;
-    const yearArg = selectedYear != null ? [selectedYear] : undefined;
-    const settlementArg = (selectedSettlementIds && selectedSettlementIds.length > 0) ? selectedSettlementIds : undefined;
+    const categoryArg: number[] = selectedCategory != null ? [selectedCategory] : [];
+    const yearArg: number[] = selectedYear != null ? [selectedYear] : [];
+    // Use explicit settlements only; regionIds are forwarded as query param via options
+    const settlementArg: number[] = (selectedSettlementIds && selectedSettlementIds.length > 0) ? selectedSettlementIds : [];
+    const regionArg: number[] = (selectedRegionIds && selectedRegionIds.length > 0) ?selectedRegionIds : [];
+
+    const handleData = (count: number | undefined, items: any[]) => {
+      const list = items ?? [];
+      setRecipeCount(count ?? 0);
+      setRecipes(list);
+      const distinctYears = Array.from(
+        new Set(
+          list
+            .map((r: any) => r.year)
+            .filter((y: any): y is number => typeof y === 'number' && Number.isFinite(y))
+        )
+      ).sort((a, b) => b - a);
+      setYears(distinctYears);
+    };
+
+    const options: any = {};
+
     recipesApi
-      .apiRecipesGet(yearArg, settlementArg, categoryArg)
-      .then((res) => {
-        const items = res.data?.items ?? [];
-        setRecipeCount(res.data?.count ?? 0);
-        setRecipes(items);
-        const distinctYears = Array.from(
-          new Set(
-            items
-              .map((r) => r.year)
-              .filter((y): y is number => typeof y === 'number' && Number.isFinite(y))
-          )
-        ).sort((a, b) => b - a);
-        setYears(distinctYears);
-      })
+      .apiRecipesGet(regionArg, yearArg, settlementArg, categoryArg, options)
+      .then((res) => handleData(res.data?.count, res.data?.items ?? []))
       .catch(() => {});
-  }, [selectedCategory, selectedYear, selectedSettlementIds]);
+  }, [selectedCategory, selectedYear, selectedSettlementIds, selectedRegionIds]);
 
   const regionOptions = useMemo(
     () => (regions ?? []).map((r) => ({ label: r.name ?? `Régió ${r.id}`, value: r.id })),

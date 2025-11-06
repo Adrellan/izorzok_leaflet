@@ -98,8 +98,19 @@ paths:
     get:
       tags: [Recipes]
       summary: Receptek listázása
-      description: Visszaadja az összes receptet, opcionális szűrőkkel. A válasz tartalmazza az összes találat számát is.
+      description: Visszaadja az összes receptet, opcionális szűrőkkel (év, település, kategória, régió). A válasz tartalmazza az összes találat számát is.
       parameters:
+        - in: query
+          name: regionId
+          required: false
+          description: Opcionális szűrés régió(k) szerint. Több regionId megadható (?regionId=1&regionId=2) vagy vesszővel elválasztva (?regionId=1,2). A régió szűrő település ID-kká kerül kibontásra.
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int32
+          style: form
+          explode: true
         - in: query
           name: year
           required: false
@@ -113,6 +124,7 @@ paths:
         - in: query
           name: settlementId
           required: false
+          description: Opcionális szűrés település(ek) szerint.
           schema:
             type: array
             items:
@@ -123,6 +135,7 @@ paths:
         - in: query
           name: categoryId
           required: false
+          description: Opcionális szűrés kategória(k) szerint.
           schema:
             type: array
             items:
