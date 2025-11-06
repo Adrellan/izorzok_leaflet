@@ -103,8 +103,41 @@ RecipeController.get('/', async (req, res) => {
       countQb.getCount(),
     ]);
 
+    // Build region_counts by mapping settlement_id -> regionid, then aggregating
+    const settlementIdsForCount = Array.from(
+      new Set(
+        (rows || [])
+          .map((r) => (r && r.settlement_id != null ? Number(r.settlement_id) : NaN))
+          .filter((n) => Number.isFinite(n)) as number[]
+      )
+    );
+
+    let regionCounts: Record<string, number> = {};
+    if (settlementIdsForCount.length > 0) {
+      const srows = await ds
+        .getRepository(Settlement)
+        .createQueryBuilder('s')
+        .select('s.id', 'id')
+        .addSelect('s.regionid', 'regionid')
+        .where('s.id IN (:...ids)', { ids: settlementIdsForCount })
+        .getRawMany<{ id: number; regionid: number | null }>();
+
+      const idToRegion = new Map<number, number | null>(srows.map((r) => [r.id, r.regionid] as const));
+
+      const agg: Record<string, number> = {};
+      for (const row of rows) {
+        const sid = row.settlement_id;
+        if (sid == null) continue;
+        const rid = idToRegion.get(Number(sid));
+        if (rid == null || !Number.isFinite(rid)) continue;
+        const key = String(rid);
+        agg[key] = (agg[key] ?? 0) + 1;
+      }
+      regionCounts = agg;
+    }
+
     res.setHeader('X-Total-Count', String(count));
-    res.json({ count, items: rows });
+    res.json({ count, items: rows, region_counts: regionCounts });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message || String(e) });
   }
