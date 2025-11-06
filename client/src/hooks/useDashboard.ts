@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { setSelectedRegionIds, setSelectedSettlementIds } from "../store/map/map.store";
+import { setSelectedRegionIds, setSelectedSettlementIds, setRegionCounts, setSelectedCategoryId as setSelectedCategoryIdStore, setSelectedYear as setSelectedYearStore, setCategoryMap, setSettlementCounts } from "../store/map/map.store";
 import { useAppDispatch, useAppSelector } from "./hooks";
 import { MapsApi, RecipesApi } from "../config/api/api";
 import type { RegionWithGeom, SettlementWithGeom, Category, RecipeListItem } from "../config/api/api";
@@ -23,6 +23,9 @@ export const useDashboard = () => {
     if (initRef.current) return;
     initRef.current = true;
     const api = new MapsApi();
+    // Reset any persisted filter indicators so UI and map stay in sync
+    dispatch(setSelectedCategoryIdStore(null));
+    dispatch(setSelectedYearStore(null));
     if (!regions || regions.length === 0) {
       api.apiMapsRegionsGet()
         .then((res) => dispatch(setRegionsStore(res.data ?? [])))
@@ -37,7 +40,17 @@ export const useDashboard = () => {
     const recipesApi = new RecipesApi();
     recipesApi
       .apiRecipesCategoriesGet()
-      .then((res) => setCategories(res.data ?? []))
+      .then((res) => {
+        const items = res.data ?? [];
+        setCategories(items);
+        const cmap: Record<number, string> = {};
+        items.forEach((c) => {
+          if (c && typeof c.id === 'number') {
+            cmap[c.id] = c.name ?? `Kategória ${c.id}`;
+          }
+        });
+        dispatch(setCategoryMap(cmap));
+      })
       .catch(() => {});
 
     // Initial recipes will be loaded by the filter-driven effect
@@ -57,7 +70,7 @@ export const useDashboard = () => {
     const settlementArg: number[] = (selectedSettlementIds && selectedSettlementIds.length > 0) ? selectedSettlementIds : [];
     const regionArg: number[] = (selectedRegionIds && selectedRegionIds.length > 0) ?selectedRegionIds : [];
 
-    const handleData = (count: number | undefined, items: any[]) => {
+    const handleData = (count: number | undefined, items: any[], regionCountsRaw?: Record<string, number>) => {
       const list = items ?? [];
       setRecipeCount(count ?? 0);
       setRecipes(list);
@@ -69,13 +82,38 @@ export const useDashboard = () => {
         )
       ).sort((a, b) => b - a);
       setYears(distinctYears);
+
+      // Push region counts into store for heatmap rendering
+      if (regionCountsRaw && typeof regionCountsRaw === 'object') {
+        const parsed: Record<number, number> = {};
+        for (const [k, v] of Object.entries(regionCountsRaw)) {
+          const nk = Number(k);
+          if (Number.isFinite(nk) && typeof v === 'number') {
+            parsed[nk] = v;
+          }
+        }
+        dispatch(setRegionCounts(parsed));
+      } else {
+        dispatch(setRegionCounts({}));
+      }
+
+      // Build settlement counts from loaded items
+      const sc: Record<number, number> = {};
+      for (const r of list) {
+        const raw = (r as any)?.settlement_id;
+        const sid = typeof raw === 'number' ? raw : (typeof raw === 'string' ? Number(raw) : NaN);
+        if (Number.isFinite(sid)) {
+          sc[sid as number] = (sc[sid as number] ?? 0) + 1;
+        }
+      }
+      dispatch(setSettlementCounts(sc));
     };
 
     const options: any = {};
 
     recipesApi
       .apiRecipesGet(regionArg, yearArg, settlementArg, categoryArg, options)
-      .then((res) => handleData(res.data?.count, res.data?.items ?? []))
+      .then((res) => handleData((res.data as any)?.count, (res.data as any)?.items ?? [], (res.data as any)?.region_counts))
       .catch(() => {});
   }, [selectedCategory, selectedYear, selectedSettlementIds, selectedRegionIds]);
 
@@ -131,10 +169,12 @@ export const useDashboard = () => {
 
   const handleCategorySelectionChange = (id: number | null) => {
     setSelectedCategory(id);
+    dispatch(setSelectedCategoryIdStore(id));
   };
 
   const handleYearSelectionChange = (id: number | null) => {
     setSelectedYear(id);
+    dispatch(setSelectedYearStore(id));
   };
 
   const handleIngredientsChange = (vals: string[]) => {

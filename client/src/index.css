@@ -1,1 +1,12 @@
 @import "tailwindcss" important;
+
+/* Ensure choropleth regions show pointer cursor and are clickable */
+.region-polygon,
+.leaflet-interactive.region-polygon {
+  cursor: pointer !important;
+}
+
+/* Fallback: make all regions in choropleth pane show pointer */
+.leaflet-pane.choropleth-pane path.leaflet-interactive {
+  cursor: pointer !important;
+}

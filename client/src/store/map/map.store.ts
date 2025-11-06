@@ -17,6 +17,11 @@ interface MapState {
 	selectedRegionIds: number[],
 	selectedSettlementIds: number[],
   heatmapEnabled: boolean,
+  regionCounts: Record<number, number>,
+  selectedCategoryId: number | null,
+  selectedYear: number | null,
+  categoryMap: Record<number, string>,
+  settlementCounts: Record<number, number>,
 }
 
 
@@ -29,6 +34,11 @@ const defaults: MapState = {
 	selectedRegionIds: [],
 	selectedSettlementIds: [],
   heatmapEnabled: false,
+  regionCounts: {},
+  selectedCategoryId: null,
+  selectedYear: null,
+  categoryMap: {},
+  settlementCounts: {},
 };
 
 const initialState: MapState = { ...defaults, ...(getLocalStorageData() || {}) };
@@ -55,8 +65,23 @@ export const mapSlice = createSlice({
     toggleHeatmap(state) {
       state.heatmapEnabled = !state.heatmapEnabled;
     },
+    setRegionCounts(state, { payload }: PayloadAction<Record<number, number>>) {
+      state.regionCounts = payload || {};
+    },
+    setSelectedCategoryId(state, { payload }: PayloadAction<number | null>) {
+      state.selectedCategoryId = payload ?? null;
+    },
+    setSelectedYear(state, { payload }: PayloadAction<number | null>) {
+      state.selectedYear = payload ?? null;
+    },
+    setCategoryMap(state, { payload }: PayloadAction<Record<number, string>>) {
+      state.categoryMap = payload || {};
+    },
+    setSettlementCounts(state, { payload }: PayloadAction<Record<number, number>>) {
+      state.settlementCounts = payload || {};
+    },
 	},
 })
 
-export const { setCoordinates, setZoom, setSelectedRegionIds, setSelectedSettlementIds, setHeatmapEnabled, toggleHeatmap } = mapSlice.actions
+export const { setCoordinates, setZoom, setSelectedRegionIds, setSelectedSettlementIds, setHeatmapEnabled, toggleHeatmap, setRegionCounts, setSelectedCategoryId, setSelectedYear, setCategoryMap, setSettlementCounts } = mapSlice.actions
 export const mapReducer = mapSlice.reducer;
