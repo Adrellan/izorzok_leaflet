@@ -6,6 +6,8 @@ import { Button } from 'primereact/button';
 import './Dashboard.css';
 import { useDashboard } from '../hooks/useDashboard';
 import StatsDialog from './StatsDialog';
+import { useAppDispatch, useAppSelector } from '../hooks/hooks';
+import { toggleHeatmap } from '../store/map/map.store';
 
 export default function Dashboard() {
   const [statsOpen, setStatsOpen] = useState(false);
@@ -28,6 +30,9 @@ export default function Dashboard() {
     fontWeight: 600,
     fontSize: 18,
     borderBottom: '1px solid #1f2937',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   };
 
   const selectWrapStyle: React.CSSProperties = {
@@ -51,9 +56,23 @@ export default function Dashboard() {
     handleIngredientsChange,
   } = useDashboard();
 
+  const dispatch = useAppDispatch();
+  const heatmapEnabled = useAppSelector((s) => s.map.heatmapEnabled);
+
   return (
     <aside style={asideStyle}>
-      <div style={brandStyle}>Ízőrzők</div>
+      <div style={brandStyle}>
+        <span>Ízőrzők</span>
+        <button
+          type="button"
+          aria-pressed={heatmapEnabled}
+          aria-label="Hőtérkép kapcsoló"
+          className={`brand-toggle ${heatmapEnabled ? 'active' : ''}`}
+          onClick={() => dispatch(toggleHeatmap())}
+        >
+          <span className="brand-toggle-icon" />
+        </button>
+      </div>
       <div style={selectWrapStyle}>
 
         <div style={{ padding: '6px 12px', color: '#94a3b8', fontSize: 12 }}>Régiók</div>

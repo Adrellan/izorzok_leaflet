@@ -16,10 +16,11 @@ interface MapState {
 	zoom: number,
 	selectedRegionIds: number[],
 	selectedSettlementIds: number[],
+  heatmapEnabled: boolean,
 }
 
 
-const initialState: MapState = getLocalStorageData() || {
+const defaults: MapState = {
 	coordinates: {
 		lat: 47.1625, // Magyarország középpontja
 		lng: 19.5033, // Magyarország középpontja
@@ -27,7 +28,10 @@ const initialState: MapState = getLocalStorageData() || {
 	zoom: 8,
 	selectedRegionIds: [],
 	selectedSettlementIds: [],
+  heatmapEnabled: false,
 };
+
+const initialState: MapState = { ...defaults, ...(getLocalStorageData() || {}) };
 
 export const mapSlice = createSlice({
 	name: 'map',
@@ -45,8 +49,14 @@ export const mapSlice = createSlice({
 		setSelectedSettlementIds(state, { payload }: PayloadAction<number[]>) {
 			state.selectedSettlementIds = payload;
 		},
+    setHeatmapEnabled(state, { payload }: PayloadAction<boolean>) {
+      state.heatmapEnabled = payload;
+    },
+    toggleHeatmap(state) {
+      state.heatmapEnabled = !state.heatmapEnabled;
+    },
 	},
 })
 
-export const { setCoordinates, setZoom, setSelectedRegionIds, setSelectedSettlementIds } = mapSlice.actions
+export const { setCoordinates, setZoom, setSelectedRegionIds, setSelectedSettlementIds, setHeatmapEnabled, toggleHeatmap } = mapSlice.actions
 export const mapReducer = mapSlice.reducer;
