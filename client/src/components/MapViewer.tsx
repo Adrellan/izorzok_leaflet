@@ -114,7 +114,7 @@ const MapViewer: React.FC = () => {
 
           {featureCollection.features?.length ? (
             <Pane name="choropleth" style={{ zIndex: 350 }}>
-              <GeoJSON pane="choropleth" interactive renderer={choroplethRenderer as any}
+              <GeoJSON pane="choropleth" interactive
                 key={`${geoJsonKey}-${rcKey}-${selectedCategoryId ?? 'cnull'}-${selectedYear ?? 'ynull'}`}
                 data={featureCollection as any}
                 style={(feature: any) => {
