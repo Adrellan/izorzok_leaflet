@@ -178,6 +178,10 @@ const MapViewer: React.FC = () => {
           {settlements?.length ? (
             <Pane name="settlement-markers" style={{ zIndex: 450 }}>
               {settlements.map((s) => {
+                const recipesHere = settlementCounts?.[s.id] ?? 0;
+                if (!(typeof recipesHere === 'number') || recipesHere <= 0) {
+                  return null; // hide settlements without any matching recipe
+                }
                 const g: any = s.geom as any;
                 if (!g) return null;
                 let lat: number | null = null;
@@ -213,7 +217,7 @@ const MapViewer: React.FC = () => {
                     pathOptions={{ color: '#e53935', weight: 1, fillColor: '#e57373', fillOpacity: 0.9 }}
                     eventHandlers={{
                       click: (e: any) => {
-                        const count = settlementCounts?.[s.id] ?? 0;
+                        const count = recipesHere;
                         const parts: string[] = [];
                         if (selectedCategoryId != null) {
                           const cname = categoryMap?.[selectedCategoryId] ?? `Kategória ${selectedCategoryId}`;
