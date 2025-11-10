@@ -60,7 +60,7 @@ export const useDashboard = () => {
   const lastFilterRef = useRef<string>("__init__");
   useEffect(() => {
     // avoid duplicate fetches if effect runs twice with same value (dev strict/hmr)
-    const key = `${selectedCategory ?? 'null'}|${selectedYear ?? 'null'}|${(selectedSettlementIds && selectedSettlementIds.length > 0) ? selectedSettlementIds.join(',') : 'none'}|${(selectedRegionIds && selectedRegionIds.length > 0) ? selectedRegionIds.join(',') : 'none'}`;
+    const key = `${selectedCategory ?? 'null'}|${selectedYear ?? 'null'}|${(selectedSettlementIds && selectedSettlementIds.length > 0) ? selectedSettlementIds.join(',') : 'none'}|${(selectedRegionIds && selectedRegionIds.length > 0) ? selectedRegionIds.join(',') : 'none'}|${(ingredients && ingredients.length > 0) ? ingredients.join(',') : 'none'}`;
     if (lastFilterRef.current === key) return;
     lastFilterRef.current = key;
     const recipesApi = new RecipesApi();
@@ -69,6 +69,7 @@ export const useDashboard = () => {
     // Use explicit settlements only; regionIds are forwarded as query param via options
     const settlementArg: number[] = (selectedSettlementIds && selectedSettlementIds.length > 0) ? selectedSettlementIds : [];
     const regionArg: number[] = (selectedRegionIds && selectedRegionIds.length > 0) ?selectedRegionIds : [];
+    const ingredientsArg: string[] = (ingredients && ingredients.length > 0) ? ingredients : [];
 
     const handleData = (count: number | undefined, items: any[], regionCountsRaw?: Record<string, number>) => {
       const list = items ?? [];
@@ -112,10 +113,10 @@ export const useDashboard = () => {
     const options: any = {};
 
     recipesApi
-      .apiRecipesGet(regionArg, yearArg, settlementArg, categoryArg, options)
+      .apiRecipesGet(regionArg, yearArg, settlementArg, categoryArg, ingredientsArg, options)
       .then((res) => handleData((res.data as any)?.count, (res.data as any)?.items ?? [], (res.data as any)?.region_counts))
       .catch(() => {});
-  }, [selectedCategory, selectedYear, selectedSettlementIds, selectedRegionIds]);
+  }, [selectedCategory, selectedYear, selectedSettlementIds, selectedRegionIds, ingredients]);
 
   const regionOptions = useMemo(
     () => (regions ?? []).map((r) => ({ label: r.name ?? `Régió ${r.id}`, value: r.id })),

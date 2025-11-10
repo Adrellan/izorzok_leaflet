@@ -12,6 +12,7 @@ export const RecipeController = Router();
 //  - settlementId: number
 //  - categoryId: number
 //  - regionId: number
+//  - ingredients: string[] (komma-szeparált vagy többször megadva)
 // Returns: { count: number, items: Array<{ url, title, year, settlement_id, category_id }> }
 RecipeController.get('/', async (req, res) => {
   try {
@@ -27,10 +28,19 @@ RecipeController.get('/', async (req, res) => {
         .filter((n) => Number.isFinite(n)) as number[]));
     };
 
+    const toStrArray = (v: string | string[] | undefined): string[] => {
+      const parts = Array.isArray(v) ? v : v ? [v] : [];
+      return Array.from(new Set(parts
+        .flatMap((s) => String(s).split(','))
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)));
+    };
+
     const years = toNumArray(req.query.year as any);
     let settlementIds = toNumArray(((req.query as any).settlementId ?? (req.query as any).settlement_id) as any);
     const categoryIds = toNumArray(((req.query as any).categoryId ?? (req.query as any).category_id) as any);
     const regionIds = toNumArray(((req.query as any).regionId ?? (req.query as any).region_id) as any);
+    const ingredients = toStrArray((req.query as any).ingredients as any);
     const hadExplicitSettlementFilter = settlementIds.length > 0;
     let appliedRegionExpansion = false;
 
@@ -75,6 +85,13 @@ RecipeController.get('/', async (req, res) => {
       qb.andWhere('r.category_id IN (:...categoryIds)', { categoryIds });
     }
 
+    if (ingredients.length > 0) {
+      ingredients.forEach((term, idx) => {
+        const key = `ing${idx}`;
+        qb.andWhere(`r.ingredients_text ILIKE :${key}`, { [key]: `%${term}%` });
+      });
+    }
+
     // Build a separate count query with identical filters
     const countQb = ds
       .getRepository(Recipe)
@@ -90,6 +107,12 @@ RecipeController.get('/', async (req, res) => {
     }
     if (categoryIds.length > 0) {
       countQb.andWhere('r.category_id IN (:...categoryIds)', { categoryIds });
+    }
+    if (ingredients.length > 0) {
+      ingredients.forEach((term, idx) => {
+        const key = `ing${idx}`;
+        countQb.andWhere(`r.ingredients_text ILIKE :${key}`, { [key]: `%${term}%` });
+      });
     }
 
     const [rows, count] = await Promise.all([

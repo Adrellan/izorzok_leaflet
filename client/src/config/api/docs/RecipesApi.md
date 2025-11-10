@@ -54,7 +54,7 @@ No authorization required
 # **apiRecipesGet**
 > RecipeListResponse apiRecipesGet()
 
-Visszaadja az összes receptet, opcionális szűrőkkel (év, település, kategória, régió). A válasz tartalmazza az összes találat számát is.
+Visszaadja az összes receptet, opcionális szűrőkkel (év, település, kategória, régió, hozzávalók). A válasz tartalmazza az összes találat számát is.
 
 ### Example
 
@@ -71,12 +71,14 @@ let regionId: Array<number>; //Opcionális szűrés régió(k) szerint. Több re
 let year: Array<number>; // (optional) (default to undefined)
 let settlementId: Array<number>; //Opcionális szűrés település(ek) szerint. (optional) (default to undefined)
 let categoryId: Array<number>; //Opcionális szűrés kategória(k) szerint. (optional) (default to undefined)
+let ingredients: Array<string>; //Opcionális szűrés hozzávalók szerint. Több kifejezés esetén mindegyiknek szerepelnie kell az összetevők szövegében. (optional) (default to undefined)
 
 const { status, data } = await apiInstance.apiRecipesGet(
     regionId,
     year,
     settlementId,
-    categoryId
+    categoryId,
+    ingredients
 );
 ```
 
@@ -88,6 +90,7 @@ const { status, data } = await apiInstance.apiRecipesGet(
 | **year** | **Array&lt;number&gt;** |  | (optional) defaults to undefined|
 | **settlementId** | **Array&lt;number&gt;** | Opcionális szűrés település(ek) szerint. | (optional) defaults to undefined|
 | **categoryId** | **Array&lt;number&gt;** | Opcionális szűrés kategória(k) szerint. | (optional) defaults to undefined|
+| **ingredients** | **Array&lt;string&gt;** | Opcionális szűrés hozzávalók szerint. Több kifejezés esetén mindegyiknek szerepelnie kell az összetevők szövegében. | (optional) defaults to undefined|
 
 
 ### Return type
@@ -110,4 +113,3 @@ No authorization required
 |**200** | Sikeres lekérdezés |  * X-Total-Count - Találatok teljes száma a szűrők figyelembevételével <br>  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
