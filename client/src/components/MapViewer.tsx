@@ -63,14 +63,23 @@ const MapViewer: React.FC = () => {
     if (values.length === 0) return null;
     const min = Math.min(...values);
     const max = Math.max(...values);
-    const bins: number[] = [];
-    if (min !== max) {
-      const step = (max - min) / 5;
-      for (let i = 1; i <= 5; i++) bins.push(Math.round(min + i * step));
-    } else {
-      bins.push(min);
-    }
     const colors = ['#fee5d9', '#fcae91', '#fb6a4a', '#de2d26', '#a50f15'];
+
+    // Build strictly increasing integer thresholds (inclusive upper bounds)
+    // Use at most 5 bins, or fewer if the integer range is smaller
+    const bins: number[] = [];
+    if (min === max) {
+      bins.push(min);
+    } else {
+      const rangeCount = (max - min + 1);
+      const steps = Math.min(colors.length, rangeCount);
+      const base = min - 1;
+      for (let i = 1; i <= steps; i++) {
+        const thr = base + Math.ceil((i * rangeCount) / steps);
+        bins.push(Math.min(thr, max));
+      }
+    }
+
     return { bins, colors, min, max };
   }, [heatmapEnabled, regionCounts]);
 
@@ -271,10 +280,11 @@ const MapViewer: React.FC = () => {
                   if (i >= heatmapMeta.bins.length) return null;
                   const from = i === 0 ? (heatmapMeta.min) : (heatmapMeta.bins[i - 1] + 1);
                   const to = heatmapMeta.bins[i];
+                  const label = (from === to) ? `${from}` : `${from} – ${to}`;
                   return (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
                       <span style={{ width: 14, height: 14, background: c, display: 'inline-block', border: '1px solid #1f2937', marginRight: 6 }} />
-                      <span>{from} – {to}</span>
+                      <span>{label}</span>
                     </div>
                   );
                 })}
