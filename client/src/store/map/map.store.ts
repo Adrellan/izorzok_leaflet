@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
+import type { RecipeListItem } from '../../config/api/api'
 
 export function getLocalStorageData() {
 	const data = localStorage.getItem('mapState');
@@ -22,6 +23,7 @@ interface MapState {
   selectedYear: number | null,
   categoryMap: Record<number, string>,
   settlementCounts: Record<number, number>,
+  settlementRecipes: Record<number, RecipeListItem[]>,
 }
 
 
@@ -39,6 +41,7 @@ const defaults: MapState = {
   selectedYear: null,
   categoryMap: {},
   settlementCounts: {},
+  settlementRecipes: {},
 };
 
 const initialState: MapState = { ...defaults, ...(getLocalStorageData() || {}) };
@@ -80,8 +83,11 @@ export const mapSlice = createSlice({
     setSettlementCounts(state, { payload }: PayloadAction<Record<number, number>>) {
       state.settlementCounts = payload || {};
     },
+    setSettlementRecipes(state, { payload }: PayloadAction<Record<number, RecipeListItem[]>>) {
+      state.settlementRecipes = payload || {};
+    },
 	},
 })
 
-export const { setCoordinates, setZoom, setSelectedRegionIds, setSelectedSettlementIds, setHeatmapEnabled, toggleHeatmap, setRegionCounts, setSelectedCategoryId, setSelectedYear, setCategoryMap, setSettlementCounts } = mapSlice.actions
+export const { setCoordinates, setZoom, setSelectedRegionIds, setSelectedSettlementIds, setHeatmapEnabled, toggleHeatmap, setRegionCounts, setSelectedCategoryId, setSelectedYear, setCategoryMap, setSettlementCounts, setSettlementRecipes } = mapSlice.actions
 export const mapReducer = mapSlice.reducer;

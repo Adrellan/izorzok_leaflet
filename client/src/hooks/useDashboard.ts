@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { setSelectedRegionIds, setSelectedSettlementIds, setRegionCounts, setSelectedCategoryId as setSelectedCategoryIdStore, setSelectedYear as setSelectedYearStore, setCategoryMap, setSettlementCounts } from "../store/map/map.store";
+import { setSelectedRegionIds, setSelectedSettlementIds, setRegionCounts, setSelectedCategoryId as setSelectedCategoryIdStore, setSelectedYear as setSelectedYearStore, setCategoryMap, setSettlementCounts, setSettlementRecipes } from "../store/map/map.store";
 import { useAppDispatch, useAppSelector } from "./hooks";
 import { MapsApi, RecipesApi } from "../config/api/api";
 import type { RegionWithGeom, SettlementWithGeom, Category, RecipeListItem } from "../config/api/api";
@@ -101,14 +101,22 @@ export const useDashboard = () => {
 
       // Build settlement counts from loaded items
       const sc: Record<number, number> = {};
-      for (const r of list) {
+      const perSettlement: Record<number, RecipeListItem[]> = {};
+      for (const r of list as RecipeListItem[]) {
         const raw = (r as any)?.settlement_id;
         const sid = typeof raw === 'number' ? raw : (typeof raw === 'string' ? Number(raw) : NaN);
-        if (Number.isFinite(sid)) {
-          sc[sid as number] = (sc[sid as number] ?? 0) + 1;
+        if (!Number.isFinite(sid)) {
+          continue;
         }
+        const id = sid as number;
+        sc[id] = (sc[id] ?? 0) + 1;
+        if (!perSettlement[id]) {
+          perSettlement[id] = [];
+        }
+        perSettlement[id].push(r);
       }
       dispatch(setSettlementCounts(sc));
+      dispatch(setSettlementRecipes(perSettlement));
     };
 
     const options: any = {};
