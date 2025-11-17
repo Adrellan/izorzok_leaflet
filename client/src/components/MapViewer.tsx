@@ -188,9 +188,7 @@ const MapViewer: React.FC = () => {
             <Pane name="settlement-markers" style={{ zIndex: 450 }}>
               {settlements.map((s) => {
                 const recipesHere = settlementCounts?.[s.id] ?? 0;
-                if (!(typeof recipesHere === 'number') || recipesHere <= 0) {
-                  return null; // hide settlements without any matching recipe
-                }
+                const hasRecipes = typeof recipesHere === 'number' && recipesHere > 0;
                 const g: any = s.geom as any;
                 if (!g) return null;
                 let lat: number | null = null;
@@ -218,12 +216,15 @@ const MapViewer: React.FC = () => {
                   if (count > 0) { lng = sumLng / count; lat = sumLat / count; }
                 }
                 if (lat == null || lng == null) return null;
+                const pathOptions: L.PathOptions = hasRecipes
+                  ? { color: '#e53935', weight: 1, fillColor: '#e57373', fillOpacity: 0.9 }
+                  : { color: '#e53935', weight: 1, fillColor: '#e57373', fillOpacity: 0 };
                 return (
                   <CircleMarker
                     key={`s-${s.id}`}
                     center={[lat, lng]}
                     radius={3}
-                    pathOptions={{ color: '#e53935', weight: 1, fillColor: '#e57373', fillOpacity: 0.9 }}
+                    pathOptions={pathOptions}
                     eventHandlers={{
                       click: (e: any) => {
                         const count = recipesHere;
