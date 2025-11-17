@@ -1,18 +1,21 @@
-﻿openapi: 3.0.3
+openapi: 3.0.3
 info:
   title: Recipe Maps API
   version: 1.0.0
-  description: Egyszerű API régiók és települések listázására.
+  description: Egyszeru API regiok es telepulesek listazasara.
 servers:
   - url: http://localhost:3000
     description: Local dev server
 paths:
   /api/maps/regions:
     get:
+      tags: [Maps]
+      summary: Regiok listazasa (GeoJSON geometriaval)
+      description: Visszaadja az osszes regiot nev szerinti rendezessel. A `geom` mezo GeoJSON Geometry objektum.
       parameters:
         - in: query
           name: regionId
-          description: Opcionális szűrés. Több regionId megadható (?regionId=1&regionId=2) vagy vesszővel elválasztva (?regionId=1,2).
+          description: Opcionális szures. Tobbszor megadhato (?regionId=1&regionId=2) vagy vesszovel elvalasztva (?regionId=1,2).
           required: false
           schema:
             type: array
@@ -21,35 +24,24 @@ paths:
               format: int32
           style: form
           explode: true
-      tags: [Maps]
-      summary: Régiók listázása (GeoJSON geometriával)
-      description: Visszaadja az összes régiót név szerinti rendezéssel. A `geom` mező GeoJSON Geometry objektum.
       responses:
         '200':
-          description: Sikeres lekérdezés
+          description: Sikeres lekerdezes
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/RegionWithGeom'
-              examples:
-                sample:
-                  value:
-                    - id: 1
-                      name: "Budapest"
-                      geom:
-                        type: Polygon
-                        coordinates: [[[19.0,47.4],[19.3,47.4],[19.3,47.6],[19.0,47.6],[19.0,47.4]]]
-                    - id: 2
-                      name: "Bács-Kiskun"
-                      geom: null
   /api/maps/settlements:
     get:
+      tags: [Maps]
+      summary: Telepulesek listazasa (GeoJSON geometriaval)
+      description: Visszaadja az osszes telepulest nev szerinti rendezessel. A `geom` mezo GeoJSON Geometry objektum.
       parameters:
         - in: query
           name: regionId
-          description: Opcionális szűrés. Több regionId megadható (?regionId=1&regionId=2) vagy vesszővel elválasztva (?regionId=1,2).
+          description: Opcionális szures. Tobbszor megadhato (?regionId=1&regionId=2) vagy vesszovel elvalasztva (?regionId=1,2).
           required: false
           schema:
             type: array
@@ -60,7 +52,7 @@ paths:
           explode: true
         - in: query
           name: settlementid
-          description: Opcionális szűrés. Több település ID is megadható (?settlementid=101&settlementid=102) vagy vesszővel elválasztva (?settlementid=101,102).
+          description: Opcionális szures. Tobbszor megadhato (?settlementid=101&settlementid=102) vagy vesszovel elvalasztva (?settlementid=101,102).
           required: false
           schema:
             type: array
@@ -69,41 +61,25 @@ paths:
               format: int64
           style: form
           explode: true
-      tags: [Maps]
-      summary: Települések listázása (GeoJSON geometriával)
-      description: Visszaadja az összes települést név szerinti rendezéssel. A `geom` mező GeoJSON Geometry objektum.
       responses:
         '200':
-          description: Sikeres lekérdezés
+          description: Sikeres lekerdezes
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/SettlementWithGeom'
-              examples:
-                sample:
-                  value:
-                    - id: 101
-                      name: "Budapest I. kerület"
-                      regionid: 1
-                      geom: null
-                    - id: 102
-                      name: "Kecskemét"
-                      regionid: 2
-                      geom:
-                        type: Polygon
-                        coordinates: [[[19.6,46.9],[19.8,46.9],[19.8,47.0],[19.6,47.0],[19.6,46.9]]]
   /api/recipes:
     get:
       tags: [Recipes]
-      summary: Receptek listázása
-      description: Visszaadja az összes receptet, opcionális szűrőkkel (év, település, kategória, régió). A válasz tartalmazza az összes találat számát is.
+      summary: Receptek listazasa
+      description: Visszaadja az osszes receptet, opcionális szurokkel (ev, telepules, kategori a, regio). A valasz tartalmazza az osszes talalat szamat is.
       parameters:
         - in: query
           name: regionId
           required: false
-          description: Opcionális szűrés régió(k) szerint. Több regionId megadható (?regionId=1&regionId=2) vagy vesszővel elválasztva (?regionId=1,2). A régió szűrő település ID-kká kerül kibontásra.
+          description: Opcionális szures regio(k) szerint. Tobbszor megadhato (?regionId=1&regionId=2) vagy vesszovel elvalasztva (?regionId=1,2). A regio szuro telepules ID-kke kerul kibontasra.
           schema:
             type: array
             items:
@@ -124,7 +100,7 @@ paths:
         - in: query
           name: settlementId
           required: false
-          description: Opcionális szűrés település(ek) szerint.
+          description: Opcionális szures telepules(ek) szerint.
           schema:
             type: array
             items:
@@ -135,7 +111,7 @@ paths:
         - in: query
           name: categoryId
           required: false
-          description: Opcionális szűrés kategória(k) szerint.
+          description: Opcionális szures kategori a(k) szerint.
           schema:
             type: array
             items:
@@ -143,56 +119,49 @@ paths:
               format: int32
           style: form
           explode: true
+        - in: query
+          name: ingredients
+          required: false
+          description: Opcionális szures hozzavalok szerint. Tobbszor megadhato (?ingredients=liszt&ingredients=tojas) vagy vesszovel elvalasztva (?ingredients=liszt,tojas).
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - in: query
+          name: reverse
+          required: false
+          description: Ha true, az ingredients szurot invertalja, es olyan recepteket ad vissza, ahol nincs benne egyik megadott hozzavalo sem.
+          schema:
+            type: boolean
       responses:
-        "200":
-          description: Sikeres lekérdezés
+        '200':
+          description: Sikeres lekerdezes
           headers:
             X-Total-Count:
-              description: Találatok teljes száma a szűrők figyelembevételével
+              description: Talalatok teljes szama a szurok figyelembevetelevel
               schema:
                 type: integer
                 format: int64
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RecipeListResponse"
-              examples:
-                sample:
-                  value:
-                    count: 2
-                    items:
-                      - url: "https://www.izorzok.hu/foispan-fule/"
-                        title: "Főispán füle"
-                        year: 2025
-                        settlement_id: 123
-                        category_id: 13
-                      - url: "https://www.izorzok.hu/valami/"
-                        title: "Valami recept"
-                        year: null
-                        settlement_id: null
-                        category_id: 7
-
+                $ref: '#/components/schemas/RecipeListResponse'
   /api/recipes/categories:
     get:
       tags: [Recipes]
-      summary: Kategóriák listázása
-      description: Visszaadja az összes recept kategóriát név szerinti rendezéssel.
+      summary: Kategoriak listazasa
+      description: Visszaadja az osszes recept kategoriat nev szerinti rendezessel.
       responses:
         '200':
-          description: Sikeres lekérdezés
+          description: Sikeres lekerdezes
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Category'
-              examples:
-                sample:
-                  value:
-                    - id: 1
-                      name: Levesek
-                    - id: 2
-                      name: Főételek
 components:
   schemas:
     Region:
@@ -201,11 +170,11 @@ components:
         id:
           type: integer
           format: int32
-          description: Régió azonosítója
+          description: Regio azonositoja
         name:
           type: string
           nullable: true
-          description: Régió neve
+          description: Regio neve
       required: [id]
     Geometry:
       type: object
@@ -215,7 +184,7 @@ components:
           type: string
           enum: [Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon]
         coordinates:
-          description: GeoJSON koordináták
+          description: GeoJSON koordinatak
           oneOf:
             - type: array
               items:
@@ -246,16 +215,16 @@ components:
         id:
           type: integer
           format: int64
-          description: Település azonosítója
+          description: Telepules azonositoja
         name:
           type: string
           nullable: true
-          description: Település neve
+          description: Telepules neve
         regionid:
           type: integer
           format: int32
           nullable: true
-          description: Régió azonosító
+          description: Regio azonosito
       required: [id]
     SettlementWithGeom:
       allOf:
@@ -265,7 +234,6 @@ components:
             geom:
               nullable: true
               $ref: '#/components/schemas/Geometry'
-
     RecipeListItem:
       type: object
       properties:
@@ -285,7 +253,6 @@ components:
           type: integer
           format: int32
           nullable: true
-
     RecipeListResponse:
       type: object
       properties:
@@ -297,16 +264,15 @@ components:
           items:
             $ref: '#/components/schemas/RecipeListItem'
       required: [count, items]
-
     Category:
       type: object
       properties:
         id:
           type: integer
           format: int32
-          description: Kategória azonosítója
+          description: Kategoria azonositoja
         name:
           type: string
           nullable: true
-          description: Kategória neve
+          description: Kategoria neve
       required: [id]

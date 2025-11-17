@@ -470,7 +470,7 @@ export const RecipesApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiRecipesGet: async (regionId?: Array<number>, year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, ingredients?: Array<string>, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiRecipesGet: async (regionId?: Array<number>, year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, ingredients?: Array<string>, reverse?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/recipes`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -501,6 +501,10 @@ export const RecipesApiAxiosParamCreator = function (configuration?: Configurati
 
             if (ingredients) {
                 localVarQueryParameter['ingredients'] = ingredients;
+            }
+
+            if (reverse !== undefined) {
+                localVarQueryParameter['reverse'] = reverse;
             }
 
 
@@ -546,8 +550,8 @@ export const RecipesApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiRecipesGet(regionId?: Array<number>, year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, ingredients?: Array<string>, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RecipeListResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiRecipesGet(regionId, year, settlementId, categoryId, ingredients, options);
+        async apiRecipesGet(regionId?: Array<number>, year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, ingredients?: Array<string>, reverse?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RecipeListResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiRecipesGet(regionId, year, settlementId, categoryId, ingredients, reverse, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['RecipesApi.apiRecipesGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -616,8 +620,7 @@ export class RecipesApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof RecipesApi
      */
-    public apiRecipesGet(regionId?: Array<number>, year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, ingredients?: Array<string>, options?: RawAxiosRequestConfig) {
-        return RecipesApiFp(this.configuration).apiRecipesGet(regionId, year, settlementId, categoryId, ingredients, options).then((request) => request(this.axios, this.basePath));
+    public apiRecipesGet(regionId?: Array<number>, year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, ingredients?: Array<string>, reverse?: boolean, options?: RawAxiosRequestConfig) {
+        return RecipesApiFp(this.configuration).apiRecipesGet(regionId, year, settlementId, categoryId, ingredients, reverse, options).then((request) => request(this.axios, this.basePath));
     }
 }
-

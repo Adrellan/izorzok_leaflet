@@ -41,6 +41,14 @@ RecipeController.get('/', async (req, res) => {
     const categoryIds = toNumArray(((req.query as any).categoryId ?? (req.query as any).category_id) as any);
     const regionIds = toNumArray(((req.query as any).regionId ?? (req.query as any).region_id) as any);
     const ingredients = toStrArray((req.query as any).ingredients as any);
+    const reverseRaw = (req.query as any).reverse;
+    const reverse =
+      typeof reverseRaw === 'string'
+        ? reverseRaw
+        : Array.isArray(reverseRaw)
+        ? reverseRaw[0]
+        : undefined;
+    const isReverseIngredientsFilter = !!reverse && ['1', 'true', 'yes', 'on'].includes(reverse.toLowerCase());
     const hadExplicitSettlementFilter = settlementIds.length > 0;
     let appliedRegionExpansion = false;
 
@@ -88,7 +96,11 @@ RecipeController.get('/', async (req, res) => {
     if (ingredients.length > 0) {
       ingredients.forEach((term, idx) => {
         const key = `ing${idx}`;
-        qb.andWhere(`r.ingredients_text ILIKE :${key}`, { [key]: `%${term}%` });
+        if (isReverseIngredientsFilter) {
+          qb.andWhere(`r.ingredients_text NOT ILIKE :${key}`, { [key]: `%${term}%` });
+        } else {
+          qb.andWhere(`r.ingredients_text ILIKE :${key}`, { [key]: `%${term}%` });
+        }
       });
     }
 
@@ -111,7 +123,11 @@ RecipeController.get('/', async (req, res) => {
     if (ingredients.length > 0) {
       ingredients.forEach((term, idx) => {
         const key = `ing${idx}`;
-        countQb.andWhere(`r.ingredients_text ILIKE :${key}`, { [key]: `%${term}%` });
+        if (isReverseIngredientsFilter) {
+          countQb.andWhere(`r.ingredients_text NOT ILIKE :${key}`, { [key]: `%${term}%` });
+        } else {
+          countQb.andWhere(`r.ingredients_text ILIKE :${key}`, { [key]: `%${term}%` });
+        }
       });
     }
 

@@ -53,6 +53,7 @@ export default function Dashboard() {
     selectedCategory,
     selectedYear,
     ingredients,
+    ingredientsReverse,
     recipes,
     recipeCount,
     handleRegionSelectionChange,
@@ -60,6 +61,7 @@ export default function Dashboard() {
     handleCategorySelectionChange,
     handleYearSelectionChange,
     handleIngredientsChange,
+    toggleIngredientsReverse,
   } = useDashboard();
 
   const dispatch = useAppDispatch();
@@ -144,7 +146,37 @@ export default function Dashboard() {
             />
           </div>
 
-          <div style={{ padding: '6px 12px', color: '#94a3b8', fontSize: 12, marginTop: '10px' }}>Hozzávalók</div>
+          <div
+            style={{
+              padding: '6px 12px',
+              color: '#94a3b8',
+              fontSize: 12,
+              marginTop: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+            }}
+          >
+            <span>Hozzávalók</span>
+            <button
+              type="button"
+              onClick={toggleIngredientsReverse}
+              aria-pressed={ingredientsReverse}
+              aria-label="Hozzávalók szűrésének megfordítása"
+              style={{
+                border: 'none',
+                background: ingredientsReverse ? '#f97316' : 'transparent',
+                color: ingredientsReverse ? '#0f172a' : '#f97316',
+                borderRadius: 999,
+                padding: '2px 10px',
+                fontSize: 11,
+                cursor: 'pointer',
+              }}
+            >
+              REV
+            </button>
+          </div>
           <div style={{ padding: '0 8px' }}>
             <Chips
               value={ingredients}
@@ -228,4 +260,3 @@ export default function Dashboard() {
     </aside>
   );
 }
-

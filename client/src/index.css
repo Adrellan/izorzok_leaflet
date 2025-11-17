@@ -10,3 +10,7 @@
 .leaflet-pane.choropleth-pane path.leaflet-interactive {
   cursor: pointer !important;
 }
+
+.leaflet-tile-pane{
+  opacity: 0.5;
+}

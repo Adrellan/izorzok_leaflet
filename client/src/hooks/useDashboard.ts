@@ -17,6 +17,7 @@ export const useDashboard = () => {
   const [years, setYears] = useState<number[]>([]);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [ingredients, setIngredients] = useState<string[]>([]);
+  const [ingredientsReverse, setIngredientsReverse] = useState<boolean>(false);
   const initRef = useRef(false);
 
   useEffect(() => {
@@ -60,7 +61,7 @@ export const useDashboard = () => {
   const lastFilterRef = useRef<string>("__init__");
   useEffect(() => {
     // avoid duplicate fetches if effect runs twice with same value (dev strict/hmr)
-    const key = `${selectedCategory ?? 'null'}|${selectedYear ?? 'null'}|${(selectedSettlementIds && selectedSettlementIds.length > 0) ? selectedSettlementIds.join(',') : 'none'}|${(selectedRegionIds && selectedRegionIds.length > 0) ? selectedRegionIds.join(',') : 'none'}|${(ingredients && ingredients.length > 0) ? ingredients.join(',') : 'none'}`;
+    const key = `${selectedCategory ?? 'null'}|${selectedYear ?? 'null'}|${(selectedSettlementIds && selectedSettlementIds.length > 0) ? selectedSettlementIds.join(',') : 'none'}|${(selectedRegionIds && selectedRegionIds.length > 0) ? selectedRegionIds.join(',') : 'none'}|${(ingredients && ingredients.length > 0) ? ingredients.join(',') : 'none'}|${ingredientsReverse ? 'rev1' : 'rev0'}`;
     if (lastFilterRef.current === key) return;
     lastFilterRef.current = key;
     const recipesApi = new RecipesApi();
@@ -113,10 +114,10 @@ export const useDashboard = () => {
     const options: any = {};
 
     recipesApi
-      .apiRecipesGet(regionArg, yearArg, settlementArg, categoryArg, ingredientsArg, options)
+      .apiRecipesGet(regionArg, yearArg, settlementArg, categoryArg, ingredientsArg, ingredientsReverse, options)
       .then((res) => handleData((res.data as any)?.count, (res.data as any)?.items ?? [], (res.data as any)?.region_counts))
       .catch(() => {});
-  }, [selectedCategory, selectedYear, selectedSettlementIds, selectedRegionIds, ingredients]);
+  }, [selectedCategory, selectedYear, selectedSettlementIds, selectedRegionIds, ingredients, ingredientsReverse]);
 
   const regionOptions = useMemo(
     () => (regions ?? []).map((r) => ({ label: r.name ?? `Régió ${r.id}`, value: r.id })),
@@ -182,6 +183,10 @@ export const useDashboard = () => {
     setIngredients(vals);
   };
 
+  const toggleIngredientsReverse = () => {
+    setIngredientsReverse((prev) => !prev);
+  };
+
   return {
     regionOptions,
     settlementOptions,
@@ -192,11 +197,13 @@ export const useDashboard = () => {
     handleCategorySelectionChange,
     handleYearSelectionChange,
     handleIngredientsChange,
+    toggleIngredientsReverse,
     selectedRegionIds,
     selectedSettlementIds,
     selectedCategory,
     selectedYear,
     ingredients,
+    ingredientsReverse,
     recipes,
     recipeCount,
   };
