@@ -14,7 +14,7 @@ type Props = {
   data: DataPoint[];
 };
 
-const RegionCharts: React.FC<Props> = ({ data }) => {
+const RegionCountCharts: React.FC<Props> = ({ data }) => {
   const ChartInner = ({ width, height }: { width: number; height: number }) => {
     const margin = { top: 20, right: 40, bottom: 40, left: 220 } as const;
     const xMax = Math.max(0, width - margin.left - margin.right);
@@ -101,4 +101,4 @@ const RegionCharts: React.FC<Props> = ({ data }) => {
   );
 };
 
-export default RegionCharts;
+export default RegionCountCharts;

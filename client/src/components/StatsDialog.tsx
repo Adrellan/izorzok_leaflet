@@ -3,9 +3,10 @@ import { Dialog } from 'primereact/dialog';
 import { TabView, TabPanel } from 'primereact/tabview';
 import { Button } from 'primereact/button';
 import { useMapviewer } from '../hooks/useMapViewer';
-import RegionCharts from './RegionCharts';
+import RegionCharts from './charts/RegionCountCharts';
 import ChartCard from './ChartCard';
 import './StatsDialog.css';
+import RegionCountCharts from './charts/RegionCountCharts';
 
 type Props = {
   visible: boolean;
@@ -58,7 +59,7 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
         title="Települések száma régiónként"
         onClick={() => setExpandedChart('region-settlements')}
       >
-        <RegionCharts data={regionData} />
+        <RegionCountCharts data={regionData} />
       </ChartCard>
       
       {/* További chart card-ok ide jönnek */}
