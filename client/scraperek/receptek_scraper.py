@@ -263,6 +263,66 @@ def _parse_ingredients_from_text(text: str) -> List[str]:
     return [normalize_spaces(x) for x in items]
 
 
+def _parse_ingredients_from_text_v2(text: str) -> List[str]:
+    """Improved, accent-insensitive ingredient extraction from a single paragraph.
+
+    - Detects the 'Hozzávalók' label by normalizing accents and case.
+    - Uses the first delimiter (:, –, —, -) after the label to separate the tail.
+    - Splits primarily on newlines/bullets/; otherwise on commas.
+    - Removes nested sub-labels like 'A pácoláshoz:'.
+    """
+    if not text:
+        return []
+
+    norm = normalize_text(text)
+    label = "hozzavalok"
+    start_idx: Optional[int] = None
+    for i in range(len(text)):
+        if normalize_text(text[i : i + len(label)]) == label:
+            start_idx = i
+            break
+    if start_idx is None and label not in norm:
+        return []
+
+    search_from = start_idx or 0
+    tail = text[search_from:]
+    m_delim = re.search(r"[:\-–—]", tail)
+    if m_delim:
+        tail = tail[m_delim.end():].strip()
+    else:
+        tail = text[search_from + (len(label) if start_idx is not None else 0):].strip()
+
+    if not tail:
+        return []
+
+    if re.search(r"\n|\u2022|\u00B7|;|\|", tail):
+        parts = re.split(r"\n+|\u2022|\u00B7|;|\|", tail)
+    else:
+        parts = tail.split(",")
+
+    def _clean_labels_v2(s: str) -> str:
+        t = s
+        prev = None
+        while prev != t:
+            prev = t
+            t = re.sub(r"(^|[\s,.;])[^:]{1,40}?:\s*", r"\1", t)
+        t = re.sub(r"\([^()]*\)", "", t)
+        t = re.sub(r"\s+", " ", t).strip()
+        t = t.strip(" ;|,")
+        return t
+
+    items: List[str] = []
+    for part in parts:
+        p = normalize_spaces(_clean_labels_v2(part))
+        if not p:
+            continue
+        if re.match(r"(?i)^(a\s+f[oő]z[eé]s|elk[eé]sz[ií]t[eé]s)", p):
+            continue
+        items.append(p)
+
+    return [normalize_spaces(x) for x in items if x]
+
+
 def find_text_block_after_heading(content_root: Tag, heading_keywords: List[str]) -> List[str]:
     """Find ingredients near a heading/label matching keywords, including the same paragraph.
 
@@ -277,7 +337,7 @@ def find_text_block_after_heading(content_root: Tag, heading_keywords: List[str]
         if any(k in text for k in norm_keys):
             # First, try to parse ingredients from the same element (paragraph label case)
             same_text = el.get_text(" ", strip=True)
-            items = _parse_ingredients_from_text(same_text)
+            items = _parse_ingredients_from_text_v2(same_text) or _parse_ingredients_from_text(same_text)
             if items:
                 return [i for i in (t.strip("-â€˘ ") for t in items) if i]
 
@@ -299,7 +359,7 @@ def find_text_block_after_heading(content_root: Tag, heading_keywords: List[str]
                 if cursor.name in {"p", "div"} and not items:
                     raw = cursor.get_text("\n", strip=True)
                     # If the following paragraph itself contains the label, use that paragraph only
-                    parsed_here = _parse_ingredients_from_text(raw)
+                    parsed_here = _parse_ingredients_from_text_v2(raw) or _parse_ingredients_from_text(raw)
                     if parsed_here:
                         return [i for i in parsed_here if i]
                     # Heuristic split
@@ -344,14 +404,14 @@ def find_ingredients_by_italics(content_root: Tag) -> List[str]:
         text = clean_text(el.get_text(" ", strip=True))
         if not text:
             continue
-        items = _parse_ingredients_from_text(text)
+        items = _parse_ingredients_from_text_v2(text) or _parse_ingredients_from_text(text)
         if items:
             return [i for i in (t.strip("-â€˘ ") for t in items) if i]
     # 2) Paragraphs that contain an italic child with the label
     for p in content_root.select("p"):
         it = p.find(["em", "i"]) or p
         text = clean_text(p.get_text(" ", strip=True))
-        items = _parse_ingredients_from_text(text)
+        items = _parse_ingredients_from_text_v2(text) or _parse_ingredients_from_text(text)
         if items:
             return [i for i in (t.strip("-â€˘ ") for t in items) if i]
     return []
@@ -631,5 +691,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Megszakítva.")
         raise
-
 
