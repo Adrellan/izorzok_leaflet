@@ -420,7 +420,9 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <div style={{ flex: 1 }}>
             <ParentSize>
-              {({ width, height }) => <ChartInner width={Math.max(360, width)} height={Math.max(360, height)} />}
+              {({ width, height }) => (
+                <ChartInner width={Math.max(360, width)} height={Math.max(360, height)} />
+              )}
             </ParentSize>
           </div>
           <div
@@ -440,8 +442,8 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
                   gap: '6px',
                   cursor: 'pointer',
                 }}
-            onMouseEnter={() => setHoveredCategory(segment.id)}
-            onMouseLeave={() => setHoveredCategory(null)}
+                onMouseEnter={() => setHoveredCategory(segment.id)}
+                onMouseLeave={() => setHoveredCategory(null)}
               >
                 <span
                   style={{
@@ -449,7 +451,8 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
                     height: '16px',
                     background: getCategoryColor(segment.id, idx),
                     borderRadius: '4px',
-                    border: hoveredCategory === segment.id ? '2px solid #dc2626' : '1px solid #0f172a',
+                    border:
+                      hoveredCategory === segment.id ? '2px solid #dc2626' : '1px solid #0f172a',
                   }}
                 />
                 <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{segment.name}</span>

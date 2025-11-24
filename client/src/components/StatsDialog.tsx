@@ -150,7 +150,16 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
         title="Leggyakoribb kategóriák"
         onClick={() => setExpandedChart('category-most-common')}
       >
-        <RegionMostCommonCategoryChart data={regionYearData} />
+        <div
+          style={{
+            transform: 'scale(0.75)',
+            transformOrigin: 'top left',
+            width: '133.333%',
+            height: '133.333%',
+          }}
+        >
+          <RegionMostCommonCategoryChart data={regionYearData} />
+        </div>
       </ChartCard>
     </div>
   );
