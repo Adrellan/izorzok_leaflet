@@ -5,6 +5,7 @@ import { Button } from 'primereact/button';
 import { useMapviewer } from '../hooks/useMapViewer';
 import { useAppSelector } from '../hooks/hooks';
 import RegionCountCharts from './charts/RegionCountCharts';
+import RegionMostCommonCategoryChart, { type RegionCategoryChartDatum } from './charts/RegionMostCommonCategoryChart';
 import RegionYearRecipeChart from './charts/RegionYearRecipeChart';
 import ChartCard from './ChartCard';
 import './StatsDialog.css';
@@ -19,6 +20,9 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
   const { regions, settlements } = useMapviewer();
   const settlementRecipes = useAppSelector(
     (s) => (s.map as any).settlementRecipes as Record<number, RecipeListItem[]>
+  );
+  const categoryMap = useAppSelector(
+    (s) => (s.map as any).categoryMap as Record<number, string>
   );
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
 
@@ -50,58 +54,71 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
     return data;
   }, [regions, settlements]);
 
-  const regionYearData = useMemo(() => {
+  const regionYearData = useMemo<RegionCategoryChartDatum[]>(() => {
     if (!regions?.length || !settlements?.length) return [];
 
     const regionIdToName = new Map<number, string>();
-    for (const r of regions) {
+    regions.forEach((r) => {
       if (typeof r.id === 'number') {
         regionIdToName.set(r.id, r.name ?? `Regio ${r.id}`);
       }
-    }
+    });
 
-    const settlementToRegion = new Map<number, number>();
-    for (const s of settlements) {
-      if (typeof s.id === 'number' && typeof s.regionid === 'number') {
-        settlementToRegion.set(s.id, s.regionid);
-      }
-    }
+    const settlementInfo = new Map<number, { regionId: number; name: string }>();
+    settlements.forEach((s) => {
+      const sid = s.id;
+      if (!Number.isFinite(sid)) return;
+      const regionId = typeof s.regionid === 'number' ? s.regionid : -1;
+      settlementInfo.set(sid, {
+        regionId,
+        name: s.name ?? `Telepules ${sid}`,
+      });
+    });
 
-    const byYearRegion = new Map<number, Map<string, number>>();
-
+    const aggregated = new Map<string, RegionCategoryChartDatum>();
     for (const [sidKey, list] of Object.entries(settlementRecipes || {})) {
       const sid = Number(sidKey);
       if (!Number.isFinite(sid)) continue;
-      const rid = settlementToRegion.get(sid);
-      if (rid == null) continue;
-      const rname = regionIdToName.get(rid) ?? `Regio ${rid}`;
+      const settlement = settlementInfo.get(sid);
+      if (!settlement) continue;
+      const regionId = settlement.regionId;
+      if (!Number.isFinite(regionId)) continue;
+      const regionName = regionIdToName.get(regionId) ?? `Regio ${regionId}`;
 
-      for (const r of list || []) {
-        const rawYear = (r as any)?.year;
+      for (const entry of list || []) {
+        const rawYear = (entry as any)?.year;
         const year = typeof rawYear === 'number' ? rawYear : Number(rawYear);
         if (!Number.isFinite(year)) continue;
-
-        if (!byYearRegion.has(year)) {
-          byYearRegion.set(year, new Map<string, number>());
+        const rawCategory = (entry as any)?.category_id;
+        const categoryId =
+          typeof rawCategory === 'number'
+            ? rawCategory
+            : typeof rawCategory === 'string'
+            ? Number(rawCategory)
+            : Number.NaN;
+        if (!Number.isFinite(categoryId)) continue;
+        const categoryName = categoryMap?.[categoryId] ?? `Kategória ${categoryId}`;
+        const key = `${year}|${regionId}|${sid}|${categoryId}`;
+        const existing = aggregated.get(key);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          aggregated.set(key, {
+            year,
+            region: regionName,
+            regionId,
+            settlementId: sid,
+            settlementName: settlement.name,
+            categoryId,
+            categoryName,
+            count: 1,
+          });
         }
-        const inner = byYearRegion.get(year)!;
-        inner.set(rname, (inner.get(rname) ?? 0) + 1);
       }
     }
 
-    const result: { year: number; region: string; count: number }[] = [];
-    Array.from(byYearRegion.entries())
-      .sort(([a], [b]) => a - b)
-      .forEach(([year, regionMap]) => {
-        Array.from(regionMap.entries())
-          .sort(([ra], [rb]) => ra.localeCompare(rb, 'hu-HU', { sensitivity: 'base' }))
-          .forEach(([region, count]) => {
-            result.push({ year, region, count });
-          });
-      });
-
-    return result;
-  }, [regions, settlements, settlementRecipes]);
+    return Array.from(aggregated.values());
+  }, [regions, settlements, settlementRecipes, categoryMap]);
 
   const renderGridView = () => (
     <div
@@ -127,6 +144,13 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
         onClick={() => setExpandedChart('year-region-recipes')}
       >
         <RegionYearRecipeChart data={regionYearData} />
+      </ChartCard>
+
+      <ChartCard
+        title="Leggyakoribb kategóriák"
+        onClick={() => setExpandedChart('category-most-common')}
+      >
+        <RegionMostCommonCategoryChart data={regionYearData} />
       </ChartCard>
     </div>
   );
@@ -158,8 +182,9 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
           style={{ color: '#e2e8f0' }}
         />
         <h3 style={{ color: '#e2e8f0', margin: 0 }}>
-          {expandedChart === 'region-settlements' && 'Települések száma régiónként'}
-          {expandedChart === 'year-region-recipes' && 'Receptek év/megye bontásban'}
+          {expandedChart === 'region-settlements' && 'Telep?l?sek sz?ma r?gi?nk?nt'}
+          {expandedChart === 'year-region-recipes' && 'Receptek ?v/megye bont?sban'}
+          {expandedChart === 'category-most-common' && 'Leggyakoribb kateg?ri?k'}
         </h3>
         <div style={{ width: '100px' }} />
       </div>
@@ -175,6 +200,9 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
         {expandedChart === 'region-settlements' && <RegionCountCharts data={regionData} />}
         {expandedChart === 'year-region-recipes' && (
           <RegionYearRecipeChart data={regionYearData} />
+        )}
+        {expandedChart === 'category-most-common' && (
+          <RegionMostCommonCategoryChart data={regionYearData} />
         )}
       </div>
     </div>
@@ -235,4 +263,3 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
 };
 
 export default StatsDialog;
-

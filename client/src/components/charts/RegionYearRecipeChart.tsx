@@ -9,6 +9,11 @@ type DataPoint = {
   year: number;
   region: string;
   count: number;
+  regionId?: number;
+  settlementId?: number;
+  settlementName?: string;
+  categoryId?: number;
+  categoryName?: string;
 };
 
 type Props = {
