@@ -16,7 +16,7 @@ type Props = {
 
 const RegionCountCharts: React.FC<Props> = ({ data }) => {
   const ChartInner = ({ width, height }: { width: number; height: number }) => {
-    const margin = { top: 20, right: 40, bottom: 40, left: 220 } as const;
+    const margin = { top: 16, right: 32, bottom: 28, left: 220 } as const;
     const xMax = Math.max(0, width - margin.left - margin.right);
     const yMax = Math.max(0, height - margin.top - margin.bottom);
 
@@ -94,7 +94,7 @@ const RegionCountCharts: React.FC<Props> = ({ data }) => {
     <div style={{ width: '100%', height: '100%' }}>
       <ParentSize>
         {({ width, height }) => (
-          <ChartInner width={Math.max(640, width)} height={Math.max(400, height)} />
+          <ChartInner width={Math.max(640, width)} height={height} />
         )}
       </ParentSize>
     </div>

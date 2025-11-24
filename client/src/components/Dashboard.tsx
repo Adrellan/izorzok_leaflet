@@ -250,7 +250,7 @@ export default function Dashboard() {
       <div style={{ padding: '12px 8px 16px 8px' }}>
         <Button
           type="button"
-          label="Vármegyei statisztikák"
+          label="Diagramok"
           className="w-full custom-sidebar-button"
           onClick={() => setStatsOpen(true)}
         />
