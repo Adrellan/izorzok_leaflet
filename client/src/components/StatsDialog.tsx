@@ -184,7 +184,7 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
         <h3 style={{ color: '#e2e8f0', margin: 0 }}>
           {expandedChart === 'region-settlements' && 'Telep?l?sek sz?ma r?gi?nk?nt'}
           {expandedChart === 'year-region-recipes' && 'Receptek ?v/megye bont?sban'}
-          {expandedChart === 'category-most-common' && 'Leggyakoribb kateg?ri?k'}
+          {expandedChart === 'category-most-common' && 'Leggyakoribb kategóriák'}
         </h3>
         <div style={{ width: '100px' }} />
       </div>

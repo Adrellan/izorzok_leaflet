@@ -3,6 +3,8 @@ import { ParentSize } from '@visx/responsive';
 import { Group } from '@visx/group';
 import { Pie } from '@visx/shape';
 import { scaleBand, scaleLinear } from '@visx/scale';
+import { arc } from 'd3-shape';
+import type { DefaultArcObject } from 'd3-shape';
 import { useAppSelector } from '../../hooks/hooks';
 
 export type RegionCategoryChartDatum = {
@@ -51,6 +53,12 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
     (s) => ((s.map as any).selectedSettlementIds as number[]) ?? []
   );
   const [hoveredCategory, setHoveredCategory] = useState<number | null>(null);
+  const [hoveredSliceCategory, setHoveredSliceCategory] = useState<number | null>(null);
+  const [hoveredBarCategory, setHoveredBarCategory] = useState<number | null>(null);
+  const [regionHoverHighlight, setRegionHoverHighlight] = useState<{
+    categoryId: number;
+    portion: number;
+  } | null>(null);
 
   const filteredData = useMemo(() => {
     if (!Array.isArray(data) || data.length === 0) return [];
@@ -77,6 +85,14 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
     });
     return Array.from(map.values()).sort((a, b) => b.value - a.value);
   }, [filteredData]);
+
+  const mainSegmentMap = useMemo(() => {
+    const map = new Map<number, number>();
+    mainSegments.forEach((segment) => {
+      map.set(segment.id, segment.value);
+    });
+    return map;
+  }, [mainSegments]);
 
   const regionCategoryMap = useMemo(() => {
     const map = new Map<
@@ -137,6 +153,24 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
     return Array.from(entry.categories.values()).sort((a, b) => b.value - a.value);
   };
 
+  const findRegionPortion = (categoryId: number | null) => {
+    if (!categoryId) return null;
+    const total = mainSegmentMap.get(categoryId) ?? 0;
+    if (total <= 0) return null;
+    for (const regionId of [selectedRegionA, selectedRegionB]) {
+      if (!regionId) continue;
+      const regionBucket = regionCategoryMap.get(regionId);
+      const value = regionBucket?.categories.get(categoryId)?.value ?? 0;
+      if (value > 0) {
+        return {
+          categoryId,
+          portion: Math.min(value / total, 1),
+        };
+      }
+    }
+    return null;
+  };
+
   const categoryColorMap = useMemo(() => {
     const map = new Map<number, string>();
     mainSegments.forEach((segment, index) => {
@@ -147,8 +181,6 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
 
   const getCategoryColor = (id: number, fallbackIndex: number) =>
     categoryColorMap.get(id) ?? palette[fallbackIndex % palette.length];
-
-  const [hoveredSliceCategory, setHoveredSliceCategory] = useState<number | null>(null);
 
   const ChartInner = ({ width, height }: { width: number; height: number }) => {
     const margin = { top: 32, right: 24, bottom: 32, left: 24 } as const;
@@ -174,6 +206,8 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
     }
 
     const hoveredSegment = mainSegments.find((seg) => seg.id === hoveredSliceCategory);
+    const computeOuterRadius = (value: number) =>
+      radius * (0.4 + 0.6 * ((value || 0) / maxSegmentValue));
 
     return (
       <svg width={width} height={height}>
@@ -181,33 +215,59 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
           <Pie
             data={mainSegments}
             pieValue={(d) => d.value}
-            outerRadius={(arc) =>
-              radius * (0.4 + 0.6 * (((arc.data as ChartSegment).value || 0) / maxSegmentValue))
+            outerRadius={(arcDatum) =>
+              computeOuterRadius((arcDatum.data?.value ?? 0))
             }
             innerRadius={radius * 0.25}
           >
             {(pie) =>
-              pie.arcs.map((arc, index) => {
-                const path = pie.path(arc);
+              pie.arcs.map((arcDatum, index) => {
+                const path = pie.path(arcDatum);
                 if (!path) return null;
-                const segment = arc.data as ChartSegment;
+                const segment = arcDatum.data;
                 const isHovered = hoveredCategory === segment.id;
+                const arcOuterRadius = computeOuterRadius(segment.value);
+                const highlightPortion =
+                  regionHoverHighlight?.categoryId === segment.id
+                    ? Math.min(Math.max(regionHoverHighlight.portion, 0), 1)
+                    : 0;
+                let highlightPath: string | null = null;
+                if (highlightPortion > 0) {
+                  const highlightGenerator = arc<DefaultArcObject>()
+                    .innerRadius(radius * 0.25)
+                    .outerRadius(arcOuterRadius);
+                  highlightPath = highlightGenerator({
+                    startAngle: arcDatum.startAngle,
+                    endAngle:
+                      arcDatum.startAngle +
+                      (arcDatum.endAngle - arcDatum.startAngle) * highlightPortion,
+                  } as DefaultArcObject);
+                }
                 return (
-                  <path
-                    key={`main-${segment.id}`}
-                    d={path}
-                    fill={isHovered ? '#dc2626' : getCategoryColor(segment.id, index)}
-                    stroke="#0f172a"
-                    strokeWidth={isHovered ? 3 : 1}
-                    onMouseEnter={() => {
-                      setHoveredCategory(segment.id);
-                      setHoveredSliceCategory(segment.id);
-                    }}
-                    onMouseLeave={() => {
-                      setHoveredCategory(null);
-                      setHoveredSliceCategory(null);
-                    }}
-                  />
+                  <g key={`main-${segment.id}`}>
+                    <path
+                      d={path}
+                      fill={isHovered ? '#dc2626' : getCategoryColor(segment.id, index)}
+                      stroke="#0f172a"
+                      strokeWidth={isHovered ? 3 : 1}
+                      onMouseEnter={() => {
+                        setHoveredCategory(segment.id);
+                        setHoveredSliceCategory(segment.id);
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredCategory(null);
+                        setHoveredSliceCategory(null);
+                      }}
+                    />
+                    {highlightPath ? (
+                      <path
+                        d={highlightPath}
+                        fill="rgba(220, 38, 38, 0.75)"
+                        stroke="#000"
+                        strokeWidth={1}
+                      />
+                    ) : null}
+                  </g>
                 );
               })
             }
@@ -241,8 +301,16 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
     const innerWidth = chartWidth - margin.left - margin.right;
     const innerHeight = chartHeight - margin.top - margin.bottom;
     const maxValue = sorted.length ? Math.max(...sorted.map((seg) => seg.value)) : 0;
-    const x = scaleBand<string>({ domain: sorted.map((seg) => seg.name), range: [0, innerWidth], padding: 0.35 });
-    const y = scaleLinear<number>({ domain: [0, maxValue || 1], range: [innerHeight, 0], nice: true });
+    const x = scaleBand<string>({
+      domain: sorted.map((seg) => seg.name),
+      range: [0, innerWidth],
+      padding: 0.35,
+    });
+    const y = scaleLinear<number>({
+      domain: [0, maxValue || 1],
+      range: [innerHeight, 0],
+      nice: true,
+    });
 
     return (
       <div
@@ -256,7 +324,7 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
           minHeight: '260px',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ color: '#e2e8f0', fontSize: '13px' }}>{label}</span>
           <select
             value={regionId ?? ''}
@@ -270,6 +338,8 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
               border: '1px solid #334155',
               borderRadius: '4px',
               padding: '4px 8px',
+              width: '170px',
+              maxWidth: '100%',
             }}
           >
             <option value="">Válassz vármegyét</option>
@@ -288,25 +358,40 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
               <Group left={margin.left} top={margin.top}>
                 <rect x={0} y={innerHeight} width={innerWidth} height={1} fill="#475569" />
                 {sorted.map((segment, index) => {
-                const xPos = x(segment.name);
-                if (xPos == null) return null;
-                const yValue = y(segment.value);
-                const barHeight = innerHeight - yValue;
-                const isHovered = hoveredCategory === segment.id;
-                return (
-                  <g key={`bar-${segment.id}-${index}`}>
+                  const xPos = x(segment.name);
+                  if (xPos == null) return null;
+                  const yValue = y(segment.value);
+                  const barHeight = innerHeight - yValue;
+                  const mainValue = mainSegmentMap.get(segment.id) ?? 0;
+                  const portion = mainValue > 0 ? Math.min(segment.value / mainValue, 1) : 0;
+                  const showCount =
+                    hoveredBarCategory === segment.id || hoveredCategory === segment.id;
+                  const isBarHighlighted = hoveredCategory === segment.id;
+                  return (
+                    <g key={`bar-${segment.id}-${index}`}>
                       <rect
                         x={xPos}
                         y={yValue}
                         width={x.bandwidth()}
                         height={barHeight}
                         fill={getCategoryColor(segment.id, index)}
-                        stroke="#0f172a"
-                        onMouseEnter={() => setHoveredCategory(segment.id)}
-                        onMouseLeave={() => setHoveredCategory(null)}
+                        stroke={isBarHighlighted ? '#000' : '#0f172a'}
+                        strokeWidth={isBarHighlighted ? 2 : 1}
                         style={{ cursor: 'pointer' }}
+                        onMouseEnter={() => {
+                          setHoveredBarCategory(segment.id);
+                          setRegionHoverHighlight(
+                            portion > 0
+                              ? { categoryId: segment.id, portion }
+                              : null
+                          );
+                        }}
+                        onMouseLeave={() => {
+                          setHoveredBarCategory(null);
+                          setRegionHoverHighlight(null);
+                        }}
                       />
-                      {isHovered ? (
+                      {showCount ? (
                         <text
                           x={xPos + x.bandwidth() / 2}
                           y={yValue - 4}
@@ -346,30 +431,30 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
               gap: '10px',
             }}
           >
-          {mainSegments.map((segment, idx) => (
-            <div
-              key={`legend-${segment.id}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-              }}
-              onMouseEnter={() => setHoveredCategory(segment.id)}
-              onMouseLeave={() => setHoveredCategory(null)}
-            >
-              <span
+            {mainSegments.map((segment, idx) => (
+              <div
+                key={`legend-${segment.id}`}
                 style={{
-                  width: '16px',
-                  height: '16px',
-                  background: getCategoryColor(segment.id, idx),
-                  borderRadius: '4px',
-                  border: hoveredCategory === segment.id ? '2px solid #dc2626' : '1px solid #0f172a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
                 }}
-              />
-              <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{segment.name}</span>
-            </div>
-          ))}
+            onMouseEnter={() => setHoveredCategory(segment.id)}
+            onMouseLeave={() => setHoveredCategory(null)}
+              >
+                <span
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    background: getCategoryColor(segment.id, idx),
+                    borderRadius: '4px',
+                    border: hoveredCategory === segment.id ? '2px solid #dc2626' : '1px solid #0f172a',
+                  }}
+                />
+                <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{segment.name}</span>
+              </div>
+            ))}
           </div>
         </div>
         <div style={{ width: '320px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
