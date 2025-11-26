@@ -5,7 +5,10 @@ import { Button } from 'primereact/button';
 import { useMapviewer } from '../hooks/useMapViewer';
 import { useAppSelector } from '../hooks/hooks';
 import RegionCountCharts from './charts/RegionCountCharts';
-import RegionMostCommonCategoryChart, { type RegionCategoryChartDatum } from './charts/RegionMostCommonCategoryChart';
+import RegionMostCommonCategoryChart, {
+  type RegionCategoryChartDatum,
+} from './charts/RegionMostCommonCategoryChart';
+import RegionMostCommonIngredientChart from './charts/RegionMostCommonIngredientChart';
 import RegionYearRecipeChart from './charts/RegionYearRecipeChart';
 import ChartCard from './ChartCard';
 import './StatsDialog.css';
@@ -152,14 +155,22 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
       >
         <div
           style={{
-            transform: 'scale(0.75)',
-            transformOrigin: 'top left',
-            width: '133.333%',
+            transform: 'scale(0.5)',
+            transformOrigin: 'top',
+            width: '150%',
             height: '133.333%',
+            marginLeft: '-25%',
           }}
         >
           <RegionMostCommonCategoryChart data={regionYearData} />
         </div>
+      </ChartCard>
+
+      <ChartCard
+        title="Leggyakoribb hozz��val��k"
+        onClick={() => setExpandedChart('ingredient-most-common')}
+      >
+        <RegionMostCommonIngredientChart />
       </ChartCard>
     </div>
   );
@@ -191,8 +202,8 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
           style={{ color: '#e2e8f0' }}
         />
         <h3 style={{ color: '#e2e8f0', margin: 0 }}>
-          {expandedChart === 'region-settlements' && 'Telep?l?sek sz?ma r?gi?nk?nt'}
-          {expandedChart === 'year-region-recipes' && 'Receptek ?v/megye bont?sban'}
+          {expandedChart === 'region-settlements' && 'Települések száma régiónként'}
+          {expandedChart === 'year-region-recipes' && 'Receptek feltöltések száma'}
           {expandedChart === 'category-most-common' && 'Leggyakoribb kategóriák'}
         </h3>
         <div style={{ width: '100px' }} />
@@ -213,6 +224,7 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
         {expandedChart === 'category-most-common' && (
           <RegionMostCommonCategoryChart data={regionYearData} />
         )}
+        {expandedChart === 'ingredient-most-common' && <RegionMostCommonIngredientChart />}
       </div>
     </div>
   );

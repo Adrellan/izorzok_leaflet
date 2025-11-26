@@ -116,6 +116,12 @@ export interface RecipeListItem {
      * @memberof RecipeListItem
      */
     'category_id'?: number | null;
+    /**
+     * A recept hozz��val��i egy normaliz��lt sz��veges mez��ben.
+     * @type {string}
+     * @memberof RecipeListItem
+     */
+    'ingredients_text'?: string;
 }
 /**
  * 

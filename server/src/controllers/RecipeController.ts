@@ -76,6 +76,7 @@ RecipeController.get('/', async (req, res) => {
       .select('r.url', 'url')
       .addSelect('r.title', 'title')
       .addSelect('r.year', 'year')
+      .addSelect('r.ingredients_text', 'ingredients_text')
       .addSelect('r.category_id', 'category_id')
       .addSelect('r.settlement_id', 'settlement_id');
 
