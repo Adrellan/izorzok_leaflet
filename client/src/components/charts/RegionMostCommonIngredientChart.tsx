@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ParentSize } from '@visx/responsive';
 import { Group } from '@visx/group';
 import { Pie } from '@visx/shape';
+import { Chips } from 'primereact/chips';
 import { useAppSelector } from '../../hooks/hooks';
 import type {
   RegionWithGeom,
@@ -67,25 +68,22 @@ const normalizeIngredient = (raw: string | undefined | null): string => {
   const cleanToken = (token: string): string =>
     token.replace(leadingNonLetters, '').replace(trailingNonLetters, '');
 
-  let last = cleanToken(parts[parts.length - 1] || '');
-  let lastLower = last.toLowerCase();
+  const lastToken = cleanToken(parts[parts.length - 1] || '');
+  const prevToken = parts.length >= 2 ? cleanToken(parts[parts.length - 2] || '') : '';
+
+  let key = lastToken.toLowerCase();
 
   // If the last word is only "ág", treat as "<prev> ág"
-  if ((lastLower === 'ág' || lastLower === 'alja' || lastLower === 'bl' || lastLower === 'alap' || 
-    lastLower === 'alaplé' || lastLower === 'aroma') && parts.length >= 2) {
-    const prev = cleanToken(parts[parts.length - 2] || '');
-    if (prev) {
-      last = `${prev.toLowerCase()} ág`;
-      lastLower = last.toLowerCase();
-    }
+  if ((key === 'ág' || key === 'alja' || key === 'bl' || key === 'alap' || key === 'fehérje' || 
+    key === 'alaplé' || key === 'aroma' || key === 'befőtt') && parts.length >= 2) {
+    key = `${prevToken.toLowerCase()} ${key}`;
   }
 
-  // If nothing meaningful or still just a number, drop it
-  if (!lastLower || /^-?\d+([.,]\d+)?$/.test(lastLower)) {
+  if (!key || /^-?\d+([.,]\d+)?$/.test(key)) {
     return '';
   }
 
-  return lastLower;
+  return key;
 };
 
 const splitIngredientsText = (text: string | undefined | null): string[] => {
@@ -118,6 +116,7 @@ const RegionMostCommonIngredientChart: React.FC = () => {
   const [showRarest, setShowRarest] = useState(false);
   const [hoveredIngredient, setHoveredIngredient] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
 
   const categoryOptions = useMemo(
     () =>
@@ -140,7 +139,7 @@ const RegionMostCommonIngredientChart: React.FC = () => {
     const regionNameById = new Map<number, string>();
     regions.forEach((r) => {
       if (typeof r.id === 'number') {
-        regionNameById.set(r.id, r.name ?? `Varmegye ${r.id}`);
+        regionNameById.set(r.id, r.name ?? `Vármegye ${r.id}`);
       }
     });
 
@@ -151,7 +150,7 @@ const RegionMostCommonIngredientChart: React.FC = () => {
       if (!Number.isFinite(sid) || !Number.isFinite(rid)) return;
       settlementToRegion.set(sid, {
         regionId: rid,
-        regionName: regionNameById.get(rid) ?? `Varmegye ${rid}`,
+        regionName: regionNameById.get(rid) ?? `Vármegye ${rid}`,
       });
     });
 
@@ -163,6 +162,12 @@ const RegionMostCommonIngredientChart: React.FC = () => {
       }
     >();
     const globalCounts = new Map<string, number>();
+
+    const excludedSet = new Set(
+      excludedIngredients
+        .map((name) => normalizeIngredient(name))
+        .filter((name) => name.length > 0),
+    );
 
     const hasSelectedSettlements = selectedSettlementIds.length > 0;
     const selectedSettlementSet = hasSelectedSettlements
@@ -203,6 +208,7 @@ const RegionMostCommonIngredientChart: React.FC = () => {
         const ingredientsText = (recipe as any)?.ingredients_text as string | undefined;
         const ingredients = splitIngredientsText(ingredientsText);
         for (const ing of ingredients) {
+          if (excludedSet.has(ing)) continue;
           const prevRegion = bucket.ingredientCounts.get(ing) ?? 0;
           bucket.ingredientCounts.set(ing, prevRegion + 1);
           const prevGlobal = globalCounts.get(ing) ?? 0;
@@ -261,6 +267,7 @@ const RegionMostCommonIngredientChart: React.FC = () => {
     selectedSettlementIds,
     showRarest,
     selectedCategoryId,
+    excludedIngredients,
   ]);
 
   const PieInner = ({ width, height }: { width: number; height: number }) => {
@@ -375,7 +382,7 @@ const RegionMostCommonIngredientChart: React.FC = () => {
             marginBottom: 4,
           }}
         >
-          <span style={{ color: '#e2e8f0', fontSize: 13 }}>Varmegye → hozzavalo</span>
+          <span style={{ color: '#e2e8f0', fontSize: 13 }}>Vármegye → hozzávaló</span>
           <button
             type="button"
             onClick={() => setShowRarest((prev) => !prev)}
@@ -389,7 +396,7 @@ const RegionMostCommonIngredientChart: React.FC = () => {
               color: showRarest ? '#0f172a' : '#f97316',
             }}
           >
-            {showRarest ? 'Leggyakoribbak' : 'Legritkabbak'}
+            {showRarest ? 'Leggyakoribbak' : 'Legritkábbak'}
           </button>
         </div>
         <div
@@ -433,10 +440,11 @@ const RegionMostCommonIngredientChart: React.FC = () => {
                 >
                   <span
                     style={{
-                      flex: 1,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
+                      flex: 1.5,
+                      whiteSpace: 'normal',
+                      overflow: 'visible',
+                      textOverflow: 'clip',
+                      wordBreak: 'break-word',
                     }}
                   >
                     {item.regionName}
@@ -486,7 +494,22 @@ const RegionMostCommonIngredientChart: React.FC = () => {
             )}
           </ParentSize>
         </div>
-        <div>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            width: 240,
+          }}
+        >
+          <Chips
+            value={excludedIngredients}
+            onChange={(e) => setExcludedIngredients(e.value || [])}
+            placeholder="Írj be hozzávalót, majd Enter"
+            allowDuplicate={false}
+            className="route-ms w-full"
+            style={{ width: '100%' }}
+          />
           <select
             value={selectedCategoryId ?? ''}
             onChange={(e) => {
@@ -500,7 +523,7 @@ const RegionMostCommonIngredientChart: React.FC = () => {
               borderRadius: 4,
               padding: '4px 8px',
               fontSize: 12,
-              minWidth: 180,
+              width: '100%',
             }}
           >
             <option value=''>Minden kategoria</option>

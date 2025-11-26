@@ -97,8 +97,8 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
           typeof rawCategory === 'number'
             ? rawCategory
             : typeof rawCategory === 'string'
-            ? Number(rawCategory)
-            : Number.NaN;
+              ? Number(rawCategory)
+              : Number.NaN;
         if (!Number.isFinite(categoryId)) continue;
         const categoryName = categoryMap?.[categoryId] ?? `Kategória ${categoryId}`;
         const key = `${year}|${regionId}|${sid}|${categoryId}`;
@@ -167,10 +167,20 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
       </ChartCard>
 
       <ChartCard
-        title="Leggyakoribb hozz��val��k"
+        title="Leggyakoribb/legritkább hozzávalók"
         onClick={() => setExpandedChart('ingredient-most-common')}
       >
-        <RegionMostCommonIngredientChart />
+        <div
+          style={{
+            transform: 'scale(0.5)',
+            transformOrigin: 'top left',
+            width: '180%',
+            height: '180%',
+            marginLeft: '5%',
+          }}
+        >
+          <RegionMostCommonIngredientChart />
+        </div>
       </ChartCard>
     </div>
   );
@@ -215,6 +225,7 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
           width: '100%',
           maxWidth: '1200px',
           margin: '0 auto',
+          overflow: 'auto',
         }}
       >
         {expandedChart === 'region-settlements' && <RegionCountCharts data={regionData} />}
