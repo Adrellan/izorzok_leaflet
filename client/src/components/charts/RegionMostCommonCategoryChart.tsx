@@ -153,24 +153,6 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
     return Array.from(entry.categories.values()).sort((a, b) => b.value - a.value);
   };
 
-  const findRegionPortion = (categoryId: number | null) => {
-    if (!categoryId) return null;
-    const total = mainSegmentMap.get(categoryId) ?? 0;
-    if (total <= 0) return null;
-    for (const regionId of [selectedRegionA, selectedRegionB]) {
-      if (!regionId) continue;
-      const regionBucket = regionCategoryMap.get(regionId);
-      const value = regionBucket?.categories.get(categoryId)?.value ?? 0;
-      if (value > 0) {
-        return {
-          categoryId,
-          portion: Math.min(value / total, 1),
-        };
-      }
-    }
-    return null;
-  };
-
   const categoryColorMap = useMemo(() => {
     const map = new Map<number, string>();
     mainSegments.forEach((segment, index) => {
@@ -247,9 +229,9 @@ const RegionMostCommonCategoryChart: React.FC<{ data: RegionCategoryChartDatum[]
                   <g key={`main-${segment.id}`}>
                     <path
                       d={path}
-                      fill={isHovered ? '#dc2626' : getCategoryColor(segment.id, index)}
-                      stroke="#0f172a"
-                      strokeWidth={isHovered ? 3 : 1}
+                      fill={getCategoryColor(segment.id, index)}
+                      stroke={isHovered ? '#000000' : '#0f172a'}
+                      strokeWidth={isHovered ? 5 : 1}
                       onMouseEnter={() => {
                         setHoveredCategory(segment.id);
                         setHoveredSliceCategory(segment.id);

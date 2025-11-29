@@ -71,7 +71,11 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
     settlements.forEach((s) => {
       const sid = s.id;
       if (!Number.isFinite(sid)) return;
-      const regionId = typeof s.regionid === 'number' ? s.regionid : -1;
+      const regionId =
+        typeof s.regionid === 'number' && Number.isFinite(s.regionid) && s.regionid > 0
+          ? s.regionid
+          : Number.NaN;
+      if (!Number.isFinite(regionId)) return;
       settlementInfo.set(sid, {
         regionId,
         name: s.name ?? `Telepules ${sid}`,
@@ -85,7 +89,7 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
       const settlement = settlementInfo.get(sid);
       if (!settlement) continue;
       const regionId = settlement.regionId;
-      if (!Number.isFinite(regionId)) continue;
+      if (!Number.isFinite(regionId) || regionId <= 0) continue;
       const regionName = regionIdToName.get(regionId) ?? `Regio ${regionId}`;
 
       for (const entry of list || []) {
