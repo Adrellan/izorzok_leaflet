@@ -298,7 +298,9 @@ def _parse_ingredients_from_text_v2(text: str) -> List[str]:
     if re.search(r"\n|\u2022|\u00B7|;|\|", tail):
         parts = re.split(r"\n+|\u2022|\u00B7|;|\|", tail)
     else:
-        parts = tail.split(",")
+        # Split by comma, or by a period that is likely to end a sentence
+        # (i.e. followed by optional space and a capital letter).
+        parts = re.split(r",|\.(?=\s*[A-ZÁÉÍÓÖŐÚÜŰ])", tail)
 
     def _clean_labels_v2(s: str) -> str:
         t = s
@@ -362,8 +364,8 @@ def find_text_block_after_heading(content_root: Tag, heading_keywords: List[str]
                     parsed_here = _parse_ingredients_from_text_v2(raw) or _parse_ingredients_from_text(raw)
                     if parsed_here:
                         return [i for i in parsed_here if i]
-                    # Heuristic split
-                    parts = re.split(r"\n+|;|,", raw)
+                    # Heuristic split: newlines / semicolons / commas / sentence-ending periods
+                    parts = re.split(r"\n+|;|,|\.(?=\s*[A-ZÁÉÍÓÖŐÚÜŰ])", raw)
                     for part in parts:
                         txt = clean_text(part)
                         # Filter non-ingredient-ish fragments
@@ -691,4 +693,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Megszakítva.")
         raise
-

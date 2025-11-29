@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { TabView, TabPanel } from 'primereact/tabview';
 import { Button } from 'primereact/button';
@@ -13,6 +13,9 @@ import RegionYearRecipeChart from './charts/RegionYearRecipeChart';
 import ChartCard from './ChartCard';
 import './StatsDialog.css';
 import type { RecipeListItem } from '../config/api/api';
+import FindRecipesByIngredients from './charts/FindRecipesByIngredients';
+import MinMaxIngredientsChart from './charts/MinMaxIngredientsChart';
+import IngredientsDistributionChart from './charts/IngredientsDistributionChart';
 
 type Props = {
   visible: boolean;
@@ -22,10 +25,10 @@ type Props = {
 const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
   const { regions, settlements } = useMapviewer();
   const settlementRecipes = useAppSelector(
-    (s) => (s.map as any).settlementRecipes as Record<number, RecipeListItem[]>
+    (s) => (s.map as any).settlementRecipes as Record<number, RecipeListItem[]>,
   );
   const categoryMap = useAppSelector(
-    (s) => (s.map as any).categoryMap as Record<number, string>
+    (s) => (s.map as any).categoryMap as Record<number, string>,
   );
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
 
@@ -78,7 +81,7 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
       if (!Number.isFinite(regionId)) return;
       settlementInfo.set(sid, {
         regionId,
-        name: s.name ?? `Telepules ${sid}`,
+        name: s.name ?? `Település ${sid}`,
       });
     });
 
@@ -101,10 +104,10 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
           typeof rawCategory === 'number'
             ? rawCategory
             : typeof rawCategory === 'string'
-              ? Number(rawCategory)
-              : Number.NaN;
+            ? Number(rawCategory)
+            : Number.NaN;
         if (!Number.isFinite(categoryId)) continue;
-        const categoryName = categoryMap?.[categoryId] ?? `Kategória ${categoryId}`;
+        const categoryName = categoryMap?.[categoryId] ?? `Kategoria ${categoryId}`;
         const key = `${year}|${regionId}|${sid}|${categoryId}`;
         const existing = aggregated.get(key);
         if (existing) {
@@ -127,7 +130,7 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
     return Array.from(aggregated.values());
   }, [regions, settlements, settlementRecipes, categoryMap]);
 
-  const renderGridView = () => (
+  const renderRegionGrid = () => (
     <div
       style={{
         display: 'grid',
@@ -140,14 +143,14 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
       }}
     >
       <ChartCard
-        title="Települések száma régiónként"
+        title="Települések száma vármegyénként"
         onClick={() => setExpandedChart('region-settlements')}
       >
         <RegionCountCharts data={regionData} />
       </ChartCard>
 
       <ChartCard
-        title="Receptek év/megye bontásban"
+        title="Receptek év/vármegye bontásban"
         onClick={() => setExpandedChart('year-region-recipes')}
       >
         <RegionYearRecipeChart data={regionYearData} />
@@ -189,6 +192,71 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
     </div>
   );
 
+  const renderRecipeGrid = () => (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))',
+        gap: '20px',
+        padding: '20px',
+        width: '100%',
+        height: '100%',
+        overflow: 'auto',
+      }}
+    >
+      <ChartCard
+        title="Receptek hozzávaló(k) alapján"
+        onClick={() => setExpandedChart('recipe-find-ingredients')}
+      >
+        <div
+          style={{
+            transform: 'scale(0.5)',
+            transformOrigin: 'top left',
+            width: '180%',
+            height: '180%',
+            marginLeft: '5%',
+          }}
+        >
+          <FindRecipesByIngredients />
+        </div>
+      </ChartCard>
+
+      <ChartCard
+        title="Legtöbb és legkevesebb hozzávalós receptek"
+        onClick={() => setExpandedChart('recipe-min-max')}
+      >
+        <div
+          style={{
+            transform: 'scale(0.5)',
+            transformOrigin: 'top left',
+            width: '180%',
+            height: '180%',
+            marginLeft: '5%',
+          }}
+        >
+          <MinMaxIngredientsChart />
+        </div>
+      </ChartCard>
+
+      <ChartCard
+        title="Hozzávalók számának eloszlása kategóriánként"
+        onClick={() => setExpandedChart('recipe-ingredients-distribution')}
+      >
+        <div
+          style={{
+            transform: 'scale(0.5)',
+            transformOrigin: 'top left',
+            width: '180%',
+            height: '180%',
+            marginLeft: '5%',
+          }}
+        >
+          <IngredientsDistributionChart />
+        </div>
+      </ChartCard>
+    </div>
+  );
+
   const renderExpandedView = () => (
     <div
       style={{
@@ -216,9 +284,14 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
           style={{ color: '#e2e8f0' }}
         />
         <h3 style={{ color: '#e2e8f0', margin: 0 }}>
-          {expandedChart === 'region-settlements' && 'Települések száma régiónként'}
+          {expandedChart === 'region-settlements' && 'Települések száma vármegyénként'}
           {expandedChart === 'year-region-recipes' && 'Receptek feltöltések száma'}
           {expandedChart === 'category-most-common' && 'Leggyakoribb kategóriák'}
+          {expandedChart === 'ingredient-most-common' && 'Leggyakoribb/legritkább hozzávalók'}
+          {expandedChart === 'recipe-find-ingredients' && 'Receptek hozzávaló(k) alapján'}
+          {expandedChart === 'recipe-min-max' && 'Legtöbb és legkevesebb hozzávalós receptek'}
+          {expandedChart === 'recipe-ingredients-distribution' &&
+            'Hozzávalók számának eloszlása kategóriánként'}
         </h3>
         <div style={{ width: '100px' }} />
       </div>
@@ -240,9 +313,25 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
           <RegionMostCommonCategoryChart data={regionYearData} />
         )}
         {expandedChart === 'ingredient-most-common' && <RegionMostCommonIngredientChart />}
+        {expandedChart === 'recipe-find-ingredients' && <FindRecipesByIngredients />}
+        {expandedChart === 'recipe-min-max' && <MinMaxIngredientsChart />}
+        {expandedChart === 'recipe-ingredients-distribution' && (
+          <IngredientsDistributionChart />
+        )}
       </div>
     </div>
   );
+
+  const isRegionExpanded =
+    expandedChart === 'region-settlements' ||
+    expandedChart === 'year-region-recipes' ||
+    expandedChart === 'category-most-common' ||
+    expandedChart === 'ingredient-most-common';
+
+  const isRecipeExpanded =
+    expandedChart === 'recipe-find-ingredients' ||
+    expandedChart === 'recipe-min-max' ||
+    expandedChart === 'recipe-ingredients-distribution';
 
   return (
     <Dialog
@@ -272,7 +361,7 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
                 overflow: 'hidden',
               }}
             >
-              {expandedChart ? renderExpandedView() : renderGridView()}
+              {isRegionExpanded ? renderExpandedView() : renderRegionGrid()}
             </div>
           </TabPanel>
           <TabPanel header="Recept statisztikák" style={{ backgroundColor: '#1e293b' }}>
@@ -280,16 +369,11 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
               style={{
                 width: '100%',
                 height: 'calc(100vh - 240px)',
-                padding: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
                 backgroundColor: '#1e293b',
+                overflow: 'hidden',
               }}
             >
-              <p style={{ color: '#94a3b8', fontSize: '16px' }}>
-                Recept statisztikák hamarosan...
-              </p>
+              {isRecipeExpanded ? renderExpandedView() : renderRecipeGrid()}
             </div>
           </TabPanel>
         </TabView>
