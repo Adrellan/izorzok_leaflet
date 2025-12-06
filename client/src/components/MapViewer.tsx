@@ -232,14 +232,14 @@ const MapViewer: React.FC = () => {
                 if (lat == null || lng == null) return null;
 
                 const pathOptions: PathOptions = hasRecipes
-                  ? { color: '#e53935', weight: 1, fillColor: '#e57373', fillOpacity: 0.9 }
-                  : { color: '#e53935', weight: 1, fillColor: '#e57373', fillOpacity: 0 };
+                  ? { color: '#0d4d00ff', weight: 1, fillColor: '#2bff00ff', fillOpacity: 0.9 }
+                  : { color: '#e53935', weight: 1, fillColor: '#e57373', fillOpacity: 0.9 };
 
                 return (
                   <CircleMarker
                     key={`s-${s.id}`}
                     center={[lat, lng]}
-                    radius={3}
+                    radius={5}
                     pathOptions={pathOptions}
                     eventHandlers={{
                       click: (e: any) => {
