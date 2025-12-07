@@ -16,6 +16,9 @@ import type { RecipeListItem } from '../config/api/api';
 import FindRecipesByIngredients from './charts/FindRecipesByIngredients';
 import MinMaxIngredientsChart from './charts/MinMaxIngredientsChart';
 import IngredientsDistributionChart from './charts/IngredientsDistributionChart';
+import CategorCountsPerYears, {
+  type CategoryYearCountDatum,
+} from './charts/CategorCountsPerYears';
 
 type Props = {
   visible: boolean;
@@ -129,6 +132,34 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
 
     return Array.from(aggregated.values());
   }, [regions, settlements, settlementRecipes, categoryMap]);
+
+  const categoryYearData = useMemo<CategoryYearCountDatum[]>(() => {
+    const byCategoryYear = new Map<string, CategoryYearCountDatum>();
+    regionYearData.forEach((entry) => {
+      const year = entry.year;
+      const categoryId = entry.categoryId;
+      if (!Number.isFinite(year) || !Number.isFinite(categoryId)) return;
+      const key = `${categoryId}|${year}`;
+      const existing = byCategoryYear.get(key);
+      if (existing) {
+        existing.count += entry.count;
+      } else {
+        byCategoryYear.set(key, {
+          year,
+          categoryId,
+          categoryName: entry.categoryName ?? `Kategoria ${categoryId}`,
+          count: entry.count,
+        });
+      }
+    });
+
+    return Array.from(byCategoryYear.values()).sort((a, b) => {
+      if (a.year === b.year) {
+        return a.categoryName.localeCompare(b.categoryName, 'hu-HU', { sensitivity: 'base' });
+      }
+      return a.year - b.year;
+    });
+  }, [regionYearData]);
 
   const renderRegionGrid = () => (
     <div
@@ -250,8 +281,25 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
             height: '180%',
             marginLeft: '5%',
           }}
+      >
+        <IngredientsDistributionChart />
+        </div>
+      </ChartCard>
+
+      <ChartCard
+        title="Kategória darabszám év szerint"
+        onClick={() => setExpandedChart('category-year-counts')}
+      >
+        <div
+          style={{
+            transform: 'scale(0.55)',
+            transformOrigin: 'top left',
+            width: '180%',
+            height: '180%',
+            marginLeft: '5%',
+          }}
         >
-          <IngredientsDistributionChart />
+          <CategorCountsPerYears data={categoryYearData} />
         </div>
       </ChartCard>
     </div>
@@ -292,6 +340,7 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
           {expandedChart === 'recipe-min-max' && 'Legtöbb és legkevesebb hozzávalós receptek'}
           {expandedChart === 'recipe-ingredients-distribution' &&
             'Hozzávalók számának eloszlása kategóriánként'}
+          {expandedChart === 'category-year-counts' && 'Kategória darabszám év szerint'}
         </h3>
         <div style={{ width: '100px' }} />
       </div>
@@ -318,6 +367,9 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
         {expandedChart === 'recipe-ingredients-distribution' && (
           <IngredientsDistributionChart />
         )}
+        {expandedChart === 'category-year-counts' && (
+          <CategorCountsPerYears data={categoryYearData} />
+        )}
       </div>
     </div>
   );
@@ -331,7 +383,8 @@ const StatsDialog: React.FC<Props> = ({ visible, onHide }) => {
   const isRecipeExpanded =
     expandedChart === 'recipe-find-ingredients' ||
     expandedChart === 'recipe-min-max' ||
-    expandedChart === 'recipe-ingredients-distribution';
+    expandedChart === 'recipe-ingredients-distribution' ||
+    expandedChart === 'category-year-counts';
 
   return (
     <Dialog

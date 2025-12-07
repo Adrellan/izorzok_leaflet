@@ -7,7 +7,7 @@ import './Dashboard.css';
 import { useDashboard } from '../hooks/useDashboard';
 import StatsDialog from './StatsDialog';
 import { useAppDispatch, useAppSelector } from '../hooks/hooks';
-import { toggleHeatmap } from '../store/map/map.store';
+import { toggleHeatmap, toggleTopCategories } from '../store/map/map.store';
 
 export default function Dashboard() {
   const [statsOpen, setStatsOpen] = useState(false);
@@ -66,20 +66,32 @@ export default function Dashboard() {
 
   const dispatch = useAppDispatch();
   const heatmapEnabled = useAppSelector((s) => s.map.heatmapEnabled);
+  const topCategoriesEnabled = useAppSelector((s) => (s.map as any).topCategoriesEnabled);
 
   return (
     <aside style={asideStyle}>
       <div style={brandStyle}>
         <span>Ízőrzők</span>
-        <button
-          type="button"
-          aria-pressed={heatmapEnabled}
-          aria-label="Hőtérkép kapcsoló"
-          className={`brand-toggle ${heatmapEnabled ? 'active' : ''}`}
-          onClick={() => dispatch(toggleHeatmap())}
-        >
-          <span className="brand-toggle-icon" />
-        </button>
+        <div className="brand-actions">
+          <button
+            type="button"
+            aria-label="Top kategóriák"
+            aria-pressed={topCategoriesEnabled}
+            className={`brand-toggle brand-toggle--stats ${topCategoriesEnabled ? 'active' : ''}`}
+            onClick={() => dispatch(toggleTopCategories())}
+          >
+            <span className="brand-toggle-icon brand-toggle-icon--stats" />
+          </button>
+          <button
+            type="button"
+            aria-pressed={heatmapEnabled}
+            aria-label="Hőtérkép kapcsoló"
+            className={`brand-toggle ${heatmapEnabled ? 'active' : ''}`}
+            onClick={() => dispatch(toggleHeatmap())}
+          >
+            <span className="brand-toggle-icon" />
+          </button>
+        </div>
       </div>
 
       <div style={selectWrapStyle}>

@@ -11,6 +11,7 @@ import { MapZoomHandler } from './MapZoomHandler';
 import { useMapStatePersist } from '../hooks/useMapStatePersist';
 import { useAppSelector } from '../hooks/hooks';
 import type { RecipeListItem } from '../config/api/api';
+import Top3Category from './Top3Category';
 
 // Fix Leaflet default marker icon issue
 L.Icon.Default.mergeOptions({
@@ -25,6 +26,7 @@ const MapViewer: React.FC = () => {
 
   const { coordinates, zoom, regions, settlements } = useMapviewer();
   const heatmapEnabled = useAppSelector((s) => s.map.heatmapEnabled);
+  const topCategoriesEnabled = useAppSelector((s) => (s.map as any).topCategoriesEnabled);
   const regionCounts = useAppSelector((s) => s.map.regionCounts as Record<number, number>);
   const selectedCategoryId = useAppSelector((s) => s.map.selectedCategoryId as number | null);
   const selectedYear = useAppSelector((s) => s.map.selectedYear as number | null);
@@ -177,6 +179,17 @@ const MapViewer: React.FC = () => {
                 }}
               />
             </Pane>
+          ) : null}
+
+          {topCategoriesEnabled ? (
+            <Top3Category
+              visible={topCategoriesEnabled}
+              regions={regions ?? []}
+              settlements={settlements ?? []}
+              settlementRecipes={settlementRecipes ?? {}}
+              categoryMap={categoryMap ?? {}}
+              zoom={zoom}
+            />
           ) : null}
 
           {settlements?.length ? (

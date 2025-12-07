@@ -24,6 +24,7 @@ interface MapState {
   categoryMap: Record<number, string>,
   settlementCounts: Record<number, number>,
   settlementRecipes: Record<number, RecipeListItem[]>,
+  topCategoriesEnabled: boolean,
 }
 
 
@@ -42,6 +43,7 @@ const defaults: MapState = {
   categoryMap: {},
   settlementCounts: {},
   settlementRecipes: {},
+  topCategoriesEnabled: false,
 };
 
 const initialState: MapState = { ...defaults, ...(getLocalStorageData() || {}) };
@@ -86,8 +88,14 @@ export const mapSlice = createSlice({
     setSettlementRecipes(state, { payload }: PayloadAction<Record<number, RecipeListItem[]>>) {
       state.settlementRecipes = payload || {};
     },
+    setTopCategoriesEnabled(state, { payload }: PayloadAction<boolean>) {
+      state.topCategoriesEnabled = payload;
+    },
+    toggleTopCategories(state) {
+      state.topCategoriesEnabled = !state.topCategoriesEnabled;
+    },
 	},
 })
 
-export const { setCoordinates, setZoom, setSelectedRegionIds, setSelectedSettlementIds, setHeatmapEnabled, toggleHeatmap, setRegionCounts, setSelectedCategoryId, setSelectedYear, setCategoryMap, setSettlementCounts, setSettlementRecipes } = mapSlice.actions
+export const { setCoordinates, setZoom, setSelectedRegionIds, setSelectedSettlementIds, setHeatmapEnabled, toggleHeatmap, setRegionCounts, setSelectedCategoryId, setSelectedYear, setCategoryMap, setSettlementCounts, setSettlementRecipes, setTopCategoriesEnabled, toggleTopCategories } = mapSlice.actions
 export const mapReducer = mapSlice.reducer;
