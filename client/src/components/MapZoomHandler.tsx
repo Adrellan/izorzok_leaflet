@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useMap, useMapEvents } from "react-leaflet";
 import { setCoordinates, setZoom } from "../store/map/map.store";
 import { useAppDispatch } from "../hooks/hooks";

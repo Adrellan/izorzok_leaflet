@@ -91,8 +91,9 @@ const Top3Category: React.FC<Props> = ({
     Object.entries(settlementRecipes || {}).forEach(([sidKey, recipes]) => {
       const sid = Number(sidKey);
       if (!Number.isFinite(sid)) return;
-      const rid = settlementRegionMap.get(sid);
-      if (!Number.isFinite(rid)) return;
+      const ridRaw = settlementRegionMap.get(sid);
+      if (typeof ridRaw !== 'number' || !Number.isFinite(ridRaw)) return;
+      const rid = ridRaw;
       const bucket = counts.get(rid) ?? new Map<number, number>();
       (recipes || []).forEach((rec) => {
         const raw = (rec as any)?.category_id;

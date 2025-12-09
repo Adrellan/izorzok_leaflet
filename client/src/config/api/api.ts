@@ -591,8 +591,8 @@ export const RecipesApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiRecipesGet(regionId?: Array<number>, year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, ingredients?: Array<string>, options?: RawAxiosRequestConfig): AxiosPromise<RecipeListResponse> {
-            return localVarFp.apiRecipesGet(regionId, year, settlementId, categoryId, ingredients, options).then((request) => request(axios, basePath));
+        apiRecipesGet(regionId?: Array<number>, year?: Array<number>, settlementId?: Array<number>, categoryId?: Array<number>, ingredients?: Array<string>, reverse?: boolean, options?: RawAxiosRequestConfig): AxiosPromise<RecipeListResponse> {
+            return localVarFp.apiRecipesGet(regionId, year, settlementId, categoryId, ingredients, reverse, options).then((request) => request(axios, basePath));
         },
     };
 };
